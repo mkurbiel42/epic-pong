@@ -1,4 +1,5 @@
 import Ball from "./Ball.js";
+import Boundary from "./Boundary.js";
 
 export default class Game {
 	constructor() {
@@ -24,8 +25,10 @@ export default class Game {
 		this.dirLight.position.set(500, 400, 200);
 		this.scene.add(this.dirLight);
 
-		this.ball = new Ball();
-		this.scene.add(this.ball);
+		this.ballObject = new Ball();
+		this.scene.add(this.ballObject);
+
+		this.fieldSize = { x: 400, z: 400 };
 
 		this.init();
 	}
@@ -37,27 +40,47 @@ export default class Game {
 			this.windowResize();
 		};
 
-		this.angle = Math.PI / 7;
+		this.angle = Math.PI / 3;
 		this.speed = 3;
+		this.ballObject.rotation.y = this.angle;
+		this.ballObject.ball.rotation.y = -this.angle;
 
+		this.addBoundaries();
 		this.render();
 	};
 
+	addBoundaries = () => {
+		let poses = [
+			{ x: this.fieldSize.x, y: 15, z: 0, rotation: Math.PI / 2 },
+			{ x: 0, y: 15, z: this.fieldSize.z, rotation: 0 },
+			{ x: -this.fieldSize.x, y: 15, z: 0, rotation: Math.PI / 2 },
+			{ x: 0, y: 15, z: -this.fieldSize.z, rotation: 0 },
+		];
+		for (let i = 0; i < 4; i++) {
+			console.log(poses[i].x);
+			let boundary = new Boundary(this.fieldSize.x * 2);
+			boundary.position.set(poses[i].x, poses[i].y, poses[i].z);
+			boundary.rotation.y = poses[i].rotation;
+			this.scene.add(boundary);
+		}
+	};
+
 	moveBall = () => {
-		this.ball.position.x += Math.cos(this.angle) * this.speed;
-		this.ball.position.z += Math.sin(this.angle) * this.speed;
+		this.ballObject.position.x += Math.sin(this.angle) * this.speed;
+		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
 
-		this.ball.rotation.x += Math.sin(this.angle) * this.speed * (this.speed / this.ball.size);
-		this.ball.rotation.z -= Math.cos(this.angle) * this.speed * (this.speed / this.ball.size);
+		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
-		if (Math.abs(this.ball.position.x) >= 200) {
+		if (Math.abs(this.ballObject.position.x) >= this.fieldSize.x - this.ballObject.size) {
 			console.log("Odbicie X");
-			this.angle = Math.PI - this.angle;
+			this.angle *= -1;
+			this.ballObject.rotation.y = this.angle;
 		}
 
-		if (Math.abs(this.ball.position.z) >= 200) {
+		if (Math.abs(this.ballObject.position.z) >= this.fieldSize.x - this.ballObject.size) {
 			console.log("Odbicie Z");
-			this.angle *= -1;
+			this.angle = Math.PI - this.angle;
+			this.ballObject.rotation.y = this.angle;
 		}
 	};
 
