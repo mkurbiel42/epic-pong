@@ -25,5 +25,10 @@ export default class Ball extends THREE.Object3D {
 
 		this.ball = new THREE.Mesh(this.ballGeometry, this.ballMaterial);
 		this.add(this.ball);
+		this.setDefaultPos();
 	}
+
+	setDefaultPos = () => {
+		this.position.set(0, this.size, 0);
+	};
 }
