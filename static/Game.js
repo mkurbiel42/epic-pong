@@ -28,7 +28,7 @@ export default class Game {
 		this.ballObject = new Ball();
 		this.scene.add(this.ballObject);
 
-		this.fieldSize = { x: 400, z: 400 };
+		this.fieldSize = { x: 400, z: 600 };
 
 		this.init();
 	}
@@ -58,7 +58,13 @@ export default class Game {
 		];
 		for (let i = 0; i < 4; i++) {
 			console.log(poses[i].x);
-			let boundary = new Boundary(this.fieldSize.x * 2);
+			let boundary;
+			if (i % 2 == 0) {
+				boundary = new Boundary(this.fieldSize.z * 2);
+			} else {
+				boundary = new Boundary(this.fieldSize.x * 2);
+			}
+
 			boundary.position.set(poses[i].x, poses[i].y, poses[i].z);
 			boundary.rotation.y = poses[i].rotation;
 			this.scene.add(boundary);
@@ -69,15 +75,22 @@ export default class Game {
 		this.ballObject.position.x += Math.sin(this.angle) * this.speed;
 		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
 
-		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
+		this.ballObject.ball.rotation.x +=
+			this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
-		if (Math.abs(this.ballObject.position.x) >= this.fieldSize.x - this.ballObject.size) {
+		if (
+			Math.abs(this.ballObject.position.x) >=
+			this.fieldSize.x - this.ballObject.size
+		) {
 			console.log("Odbicie X");
 			this.angle *= -1;
 			this.ballObject.rotation.y = this.angle;
 		}
 
-		if (Math.abs(this.ballObject.position.z) >= this.fieldSize.x - this.ballObject.size) {
+		if (
+			Math.abs(this.ballObject.position.z) >=
+			this.fieldSize.z - this.ballObject.size
+		) {
 			console.log("Odbicie Z");
 			this.angle = Math.PI - this.angle;
 			this.ballObject.rotation.y = this.angle;
