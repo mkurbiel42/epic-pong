@@ -1,7 +1,7 @@
 export default class Ball extends THREE.Mesh {
 	constructor() {
 		super();
-		this.size = 50;
+		this.size = 150;
 		this.material = new THREE.MeshPhongMaterial({
 			shininess: 20,
 			color: 0xab1637,

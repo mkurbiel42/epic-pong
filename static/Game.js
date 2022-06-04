@@ -37,7 +37,7 @@ export default class Game {
 			this.windowResize();
 		};
 
-		this.angle = Math.PI / 7;
+		this.angle = Math.PI / 4;
 		this.speed = 3;
 
 		this.render();
@@ -49,13 +49,14 @@ export default class Game {
 
 		this.ball.rotation.x += Math.sin(this.angle) * this.speed * (this.speed / this.ball.size);
 		this.ball.rotation.z -= Math.cos(this.angle) * this.speed * (this.speed / this.ball.size);
+		//this.ball.rotation.y += Math.sin(this.angle) * this.speed * (this.speed / this.ball.size);
 
-		if (Math.abs(this.ball.position.x) >= 200) {
+		if (Math.abs(this.ball.position.x) >= 400) {
 			console.log("Odbicie X");
 			this.angle = Math.PI - this.angle;
 		}
 
-		if (Math.abs(this.ball.position.z) >= 200) {
+		if (Math.abs(this.ball.position.z) >= 400) {
 			console.log("Odbicie Z");
 			this.angle *= -1;
 		}
