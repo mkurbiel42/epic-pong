@@ -1,4 +1,4 @@
-import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "Consts.js";
+import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "./Consts.js";
 
 export default class Floor extends THREE.Mesh {
 	constructor(width, length) {

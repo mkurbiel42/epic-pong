@@ -2,7 +2,7 @@ import Ball from "./Ball.js";
 import Boundary from "./Boundary.js";
 import Floor from "./Floor.js";
 import Plank from "./Plank.js";
-import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "Consts.js";
+import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "./Consts.js";
 
 export default class Game {
 	constructor() {
@@ -30,7 +30,8 @@ export default class Game {
 		document.getElementById("root").appendChild(this.renderer.domElement);
 
 		// domyślne zmienne
-		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
+		this.FIELD_SIZE = { x: 1800, z: 1800 }; //rozmiar pola gry
+		//this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
 		// init który w sumie jest niepotrzebny ale co z tego
 		this.init();
@@ -53,8 +54,8 @@ export default class Game {
 
 		// domyślny kąt toczenia się piłki i prędkość
 		// this.angle = Math.random() * 2 * Math.PI;
-		this.angle = 0;
-		this.speed = 12.5;
+		this.angle = Math.PI / 4;
+		this.speed = 17.5;
 		this.ballObject.rotation.y = this.angle;
 		this.ballObject.ball.rotation.y = -this.angle;
 
@@ -128,13 +129,16 @@ export default class Game {
 	};
 
 	moveBall = () => {
-		this.ballObject.position.x += Math.sin(this.angle) * this.speed * 3;
+		this.ballObject.position.x += Math.sin(this.angle) * this.speed /** 3*/;
 		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
 
 		this.ballObject.ball.rotation.x +=
 			this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
-		if (Math.abs(this.ballObject.position.x) >= this.FIELD_SIZE.x - this.ballObject.size) {
+		if (
+			Math.abs(this.ballObject.position.x) >= this.FIELD_SIZE.x - this.ballObject.size &&
+			this.ballObject.position.y > 0
+		) {
 			console.log("Odbicie X");
 			this.angle *= -1;
 			this.ballObject.rotation.y = this.angle;
@@ -142,12 +146,15 @@ export default class Game {
 
 		if (Math.abs(this.ballObject.position.z) >= this.FIELD_SIZE.z - this.ballObject.size) {
 			if (
-				((this.ballObject.position.x >= this.plank1.position.x - this.plank1.width / 2 &&
-					this.ballObject.position.x <= this.plank1.position.x + this.plank1.width / 2 &&
+				((this.ballObject.position.x >=
+					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
+					this.ballObject.position.x <=
+						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
 					this.ballObject.position.z > 0) ||
-					(this.ballObject.position.x >= this.plank2.position.x - this.plank2.width / 2 &&
+					(this.ballObject.position.x >=
+						this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
 						this.ballObject.position.x <=
-							this.plank2.position.x + this.plank2.width / 2 &&
+							this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
 						this.ballObject.position.z < 0)) &&
 				this.triggersActive
 			) {
@@ -164,7 +171,10 @@ export default class Game {
 						this.ballObject.rotation.y = this.angle;
 						this.triggersActive = true;
 					}, 2000);
-				} else {
+				} else if (
+					Math.abs(this.ballObject.position.z) >
+					this.FIELD_SIZE.z * SAFEAREA_EXPONENT
+				) {
 					this.ballObject.position.y -= this.speed / 2;
 				}
 			}
