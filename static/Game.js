@@ -163,7 +163,7 @@ export default class Game {
 		}
 
 		if (Math.abs(this.ballObject.position.z) >= this.FIELD_SIZE.z - this.ballObject.size) {
-			//sprawdzenie czy cała część piłki przekracza linię deski
+			//sprawdzenie czy cała piłka przekracza linię deski
 			if (
 				//hitbox dla pierwszej deski
 				((this.ballObject.position.x >=
@@ -179,7 +179,7 @@ export default class Game {
 							this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
 						Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <=
 							this.ballObject.size)) &&
-				//sprawdzenie czy piłka jest w grze (czy nie ma oczekiwania na zaczęcie od środka)
+				//sprawdzenie czy piłka jest w grze (czy nie ma oczekiwania na zaczęcie od środka) (chyba jest niepotrzebny) xd
 				this.triggersActive
 			) {
 				//odbicie piłki od deski
