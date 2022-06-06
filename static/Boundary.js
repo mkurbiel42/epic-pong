@@ -1,3 +1,5 @@
+import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "Consts.js";
+
 export default class Boundary extends THREE.Mesh {
 	constructor(width, x, z, rotation) {
 		super();
@@ -7,7 +9,7 @@ export default class Boundary extends THREE.Mesh {
 		this.rotation.y = rotation;
 
 		this.width = width;
-		this.geometry = new THREE.BoxGeometry(this.width, this.height, 3);
+		this.geometry = new THREE.BoxGeometry(this.width, this.height, FLAT_SURFACES_THICKNESS);
 
 		(this.texture = new THREE.TextureLoader().load("./gfx/woodTexture.jpg")),
 			this.texture.repeat.set(32, 0.25);
@@ -18,7 +20,7 @@ export default class Boundary extends THREE.Mesh {
 			shininess: 10,
 			color: 0x824c05,
 			side: THREE.DoubleSide,
-			map: this.texture,
+			map: this.texture
 		});
 	}
 }

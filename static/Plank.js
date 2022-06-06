@@ -1,3 +1,5 @@
+import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "Consts.js";
+
 export default class Plank extends THREE.Mesh {
 	constructor(width, z) {
 		super();
@@ -6,7 +8,7 @@ export default class Plank extends THREE.Mesh {
 		this.movingRight = false;
 		this.z = z;
 		this.height = 102;
-		this.geometry = new THREE.BoxGeometry(width, this.height, 5);
+		this.geometry = new THREE.BoxGeometry(width, this.height, FLAT_SURFACES_THICKNESS);
 
 		this.texture = new THREE.TextureLoader().load("./gfx/woodTexture.jpg");
 		this.texture.repeat.set(2, 1);
@@ -17,9 +19,9 @@ export default class Plank extends THREE.Mesh {
 			shininess: 10,
 			color: 0x824c05,
 			side: THREE.DoubleSide,
-			map: this.texture,
+			map: this.texture
 		});
 
-		this.position.set(0, this.height / 2 + 32, this.z);
+		this.position.set(0, this.height / 2, this.z);
 	}
 }
