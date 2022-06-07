@@ -1,41 +1,39 @@
 var express = require("express");
 const { json } = require("express/lib/response");
+const { Server } = require("socket.io");
+const { createServer } = require("http");
+let cors = require("cors");
 var app = express();
-const PORT = 3000;
+const PORT = 2138;
 var path = require("path");
 
+app.use(cors());
 app.use(express.json());
 app.use(express.static("static")); // serwuje stronę index.html
 
-let loggedUsers = [];
+// const Datastore = require("nedb");
 
-app.post("/loginToServer", (req, res) => {
-	let newUsername = req.body.nickname;
-
-	if (newUsername == "") {
-		res.send({
-			status: "LOGIN_INVALID",
-			status_message: "Nazwa użytkownika nie może być pusta"
-		});
-		return;
+// const dataCache = new Datastore({
+// 	filename: "dataCache.db",
+// 	autoload: true
+// });
+const httpServer = createServer();
+const io = new Server(httpServer, {
+	cors: {
+		origin: "http://localhost:2138",
+		methods: ["GET", "POST"],
+		allowedHeaders: ["cock"],
+		credentials: true
 	}
+});
+httpServer.listen(2137);
+io.on("connection", (socket) => {
+	socket.emit("message", "It's working, i think.");
 
-	if (loggedUsers.includes(newUsername)) {
-		res.send({
-			status: "LOGIN_INVALID",
-			status_message: "Podana nazwa użytkownika jest już zajęta"
-		});
-		return;
-	}
-
-	loggedUsers.push(newUsername);
-
-	res.send(
-		JSON.stringify({
-			status: "LOGIN_VALID",
-			status_message: `Użytkownik ${newUsername} pomyślnie zalogowany do serwera.`
-		})
-	);
+	socket.on("msg", (msg) => {
+		console.log(msg);
+		socket.emit("msg", "gaming");
+	});
 });
 
 app.post("/reset", (req, res) => {

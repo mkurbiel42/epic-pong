@@ -1,6 +1,6 @@
 {
 	"typeAcquisition": {
-		"include": ["three"],
+		"include": ["three", "tween.umd", "socket.io"],
 		"enable": true
 	}
 }
