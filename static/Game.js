@@ -3,7 +3,7 @@ import Boundary from "./Boundary.js";
 import Floor from "./Floor.js";
 import Plank from "./Plank.js";
 import Line from "./Line.js";
-import { FLAT_SURFACES_THICKNESS, SAFEAREA_EXPONENT } from "./Consts.js";
+import { FLAT_SURFACES_THICKNESS, SAFEAREA_MULTIPLIER } from "./Consts.js";
 
 export default class Game {
 	constructor() {
@@ -22,8 +22,8 @@ export default class Game {
 		this.camera.lookAt(this.scene.position);
 
 		// dodanie pomocniczych osi (usunąć później!)
-		this.axes = new THREE.AxesHelper(1000);
-		this.scene.add(this.axes);
+		// this.axes = new THREE.AxesHelper(1000);
+		// this.scene.add(this.axes);
 
 		// renderer
 		this.renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -35,6 +35,7 @@ export default class Game {
 		// this.FIELD_SIZE = { x: 1800, z: 1800 }; //rozmiar pola gry
 		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
+		this.gameStarted = false;
 		// init który w sumie jest niepotrzebny ale co z tego
 		this.init();
 	}
@@ -45,10 +46,16 @@ export default class Game {
 			this.windowResize();
 		};
 
+		this.addLights();
+		this.addFloor();
+		this.addBoundaries();
+		this.addLines();
+		this.render();
+	};
+
+	startGame = () => {
 		// zmienne używane później
 		this.triggersActive = true;
-		this.plank1 = null;
-		this.plank2 = null;
 
 		// utworzenie piłki
 		this.ballObject = new Ball();
@@ -63,12 +70,9 @@ export default class Game {
 		this.ballObject.rotation.y = this.angle;
 		this.ballObject.ball.rotation.y = -this.angle;
 
-		this.addLights();
-		this.addFloor();
-		this.addBoundaries();
 		this.addPlanks();
-		this.addLines();
-		this.render();
+
+		this.gameStarted = true;
 	};
 
 	addLights = () => {
@@ -81,7 +85,7 @@ export default class Game {
 	};
 
 	addFloor = () => {
-		this.floor = new Floor(this.FIELD_SIZE.x * 2, this.FIELD_SIZE.z * 2 * SAFEAREA_EXPONENT);
+		this.floor = new Floor(this.FIELD_SIZE.x * 2, this.FIELD_SIZE.z * 2 * SAFEAREA_MULTIPLIER);
 		this.scene.add(this.floor);
 	};
 
@@ -92,7 +96,7 @@ export default class Game {
 		];
 		poses.forEach((pose) => {
 			let boundary = new Boundary(
-				this.FIELD_SIZE.z * 2 * SAFEAREA_EXPONENT,
+				this.FIELD_SIZE.z * 2 * SAFEAREA_MULTIPLIER,
 				pose.x,
 				pose.z,
 				pose.rotation
@@ -166,21 +170,19 @@ export default class Game {
 			//sprawdzenie czy cała piłka przekracza linię deski
 			if (
 				//hitbox dla pierwszej deski
-				((this.ballObject.position.x >=
+				(this.ballObject.position.x >=
 					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
 					Math.abs(this.ballObject.position.z - this.FIELD_SIZE.z) <=
 						this.ballObject.size) ||
-					//hitbox dla drugiej deski
-					(this.ballObject.position.x >=
-						this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
-						this.ballObject.position.x <=
-							this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
-						Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <=
-							this.ballObject.size)) &&
-				//sprawdzenie czy piłka jest w grze (czy nie ma oczekiwania na zaczęcie od środka) (chyba jest niepotrzebny) xd
-				this.triggersActive
+				//hitbox dla drugiej deski
+				(this.ballObject.position.x >=
+					this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
+					this.ballObject.position.x <=
+						this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
+					Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <=
+						this.ballObject.size)
 			) {
 				//odbicie piłki od deski
 				if (this.ballObject.position.z > 0 && this.currentMove == 1) {
@@ -205,7 +207,10 @@ export default class Game {
 					this.currentMove = 1;
 				}
 			} else {
-				if (Math.abs(this.ballObject.position.z) > this.FIELD_SIZE.z * SAFEAREA_EXPONENT) {
+				if (
+					Math.abs(this.ballObject.position.z) >
+					this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER
+				) {
 					this.ballObject.position.y -= this.speed / 2;
 					if (this.triggersActive) {
 						console.log("Punkt!");
@@ -254,8 +259,10 @@ export default class Game {
 	};
 
 	render = () => {
-		this.movePlankAccordingly();
-		this.moveBall();
+		if (this.gameStarted) {
+			this.movePlankAccordingly();
+			this.moveBall();
+		}
 		requestAnimationFrame(this.render);
 		this.renderer.render(this.scene, this.camera);
 	};

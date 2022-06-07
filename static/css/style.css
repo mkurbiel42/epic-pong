@@ -1,5 +1,104 @@
+:root {
+	font-size: 22px;
+	--color-accent: hsl(194, 69%, 61%);
+	--color-accent-lighter: hsl(194, 62%, 68%);
+	--color-accent-lighter-transparent: hsl(194, 62%, 68%, 0.55);
+	--color-dark: hsl(246, 41%, 18%);
+	--color-dark-transparent: hsla(246, 23%, 9%, 0.78);
+}
+
 * {
 	margin: 0;
 	padding: 0;
 	box-sizing: border-box;
+	font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+#root {
+	position: relative;
+}
+
+#uiBox {
+	display: block;
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+}
+
+#loginBox {
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: fit-content;
+	margin: 0 auto;
+	padding: 1.25em;
+	gap: 0.75em;
+	border: 2px solid var(--color-accent);
+	border-radius: 0.25rem;
+	font-size: 1.5em;
+	color: var(--color-accent);
+	top: 50%;
+	transform: translateY(50%);
+}
+
+#loginBox input {
+	border: 1px solid var(--color-accent);
+	font-size: 1.1rem;
+	background-color: transparent;
+	border-radius: 0.25rem;
+	color: var(--color-accent);
+	text-align: center;
+	padding: 0.25rem;
+	transition: 0.2s;
+}
+
+#loginBox input:focus-within {
+	border: 1px solid var(--color-accent);
+}
+
+#loginBox button {
+	font-size: 1rem;
+	padding: 0.45rem 0.9rem;
+	border-radius: 0.25rem;
+	border: 1px solid rgba(0, 0, 0, 0.25);
+	font-weight: bold;
+	background-color: var(--color-accent);
+	color: var(--color-dark);
+	cursor: pointer;
+	transition: 0.2s;
+}
+
+#loginBox button:hover {
+	background-color: var(--color-accent-lighter);
+}
+
+#loginBox button:active,
+#loginBox button:focus-within,
+#loginBox input:focus-within {
+	box-shadow: 0px 0px 0px 0.25em var(--color-accent-lighter-transparent);
+}
+
+.blackedOut {
+	background-color: var(--color-dark-transparent);
+}
+
+#activeUsersBox {
+	position: absolute;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	align-items: center;
+	width: fit-content;
+	gap: 0.75em;
+	border: 2px solid var(--color-accent);
+	border-radius: 0.25rem;
+	font-size: 1.15em;
+	padding: 0.5em 0.75em;
+	text-align: center;
+	color: var(--color-accent);
+	top: 20%;
+	left: calc(50% + 12rem);
 }
