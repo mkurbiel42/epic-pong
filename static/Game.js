@@ -31,6 +31,8 @@ export default class Game {
 		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
 		this.gameStarted = false;
+		this.gameStopped = false;
+		this.allowPlankMovement = true;
 		this.angle = 0;
 		// init który w sumie jest niepotrzebny ale co z tego
 		this.init();
@@ -60,6 +62,7 @@ export default class Game {
 			.easing(TWEEN.Easing.Bounce.Out)
 			.start();
 
+		this.setPlanksToDefaultPoses();
 		setTimeout(() => {
 			// domyślny kąt toczenia się piłki i prędkość
 			this.getRandomAngle();
@@ -86,6 +89,7 @@ export default class Game {
 			console.log(Math.abs(Math.PI / 2 - Math.abs(this.angle)));
 		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 9);
 		Math.abs(this.angle) > Math.PI / 2 ? this.updateCurrentMove(-1) : this.updateCurrentMove(1);
+		this.allowPlankMovement = true;
 	};
 
 	updateCurrentMove = (value) => {
@@ -96,6 +100,17 @@ export default class Game {
 			this.currentlyMovingPlank = this.plank1;
 		} else {
 			this.currentlyMovingPlank = null;
+		}
+
+		if (this.currentlyMovingPlank && this.gameStarted) {
+			setTimeout(() => {
+				this.gameStarted = false;
+				this.allowPlankMovement = true;
+				setTimeout(() => {
+					this.allowPlankMovement = false;
+					this.gameStarted = true;
+				}, 5000);
+			}, 1000);
 		}
 
 		this.plank1.movingLeft = false;
@@ -175,6 +190,17 @@ export default class Game {
 					break;
 			}
 		});
+	};
+
+	setPlanksToDefaultPoses = () => {
+		new TWEEN.Tween(this.plank1.position)
+			.to(this.plank1.defaultPos, 1300)
+			.easing(TWEEN.Easing.Bounce.Out)
+			.start();
+		new TWEEN.Tween(this.plank2.position)
+			.to(this.plank2.defaultPos, 1300)
+			.easing(TWEEN.Easing.Bounce.Out)
+			.start();
 	};
 
 	addLines = () => {
@@ -276,6 +302,7 @@ export default class Game {
 
 	movePlankAccordingly = () => {
 		if (!this.currentlyMovingPlank) return;
+		if (!this.allowPlankMovement || this.gameStoppedd) return;
 
 		let multiplier = this.currentMove;
 
@@ -316,8 +343,8 @@ export default class Game {
 
 	render = () => {
 		//console.log(new Date());
+		this.movePlankAccordingly();
 		if (this.gameStarted) {
-			this.movePlankAccordingly();
 			this.moveBall();
 		}
 		TWEEN.update();

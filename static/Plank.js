@@ -22,6 +22,11 @@ export default class Plank extends THREE.Mesh {
 			map: this.texture
 		});
 
-		this.position.set(0, this.height / 2, this.z);
+		this.setDefaultPos();
+		this.defaultPos = { x: 0, y: this.height / 2, z: this.z };
 	}
+
+	setDefaultPos = () => {
+		this.position.set(0, this.height / 2, this.z);
+	};
 }
