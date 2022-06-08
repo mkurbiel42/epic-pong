@@ -1,10 +1,9 @@
 var express = require("express");
-const { json } = require("express/lib/response");
 const { Server } = require("socket.io");
 const { createServer } = require("http");
 let cors = require("cors");
 var app = express();
-const PORT = 2138;
+const PORT = 2137;
 var path = require("path");
 
 app.use(cors());
@@ -17,16 +16,10 @@ app.use(express.static("static")); // serwuje stronę index.html
 // 	filename: "dataCache.db",
 // 	autoload: true
 // });
-const httpServer = createServer();
-const io = new Server(httpServer, {
-	cors: {
-		origin: "http://localhost:2138",
-		methods: ["GET", "POST"],
-		allowedHeaders: ["cock"],
-		credentials: true
-	}
-});
-httpServer.listen(2137);
+
+const httpServer = createServer(app);
+const io = new Server(httpServer);
+
 io.on("connection", (socket) => {
 	socket.emit("message", "It's working, i think.");
 
@@ -43,6 +36,6 @@ app.post("/reset", (req, res) => {
 	);
 });
 
-app.listen(PORT, function () {
+httpServer.listen(PORT, function () {
 	console.log("start serwera na porcie " + PORT);
 });
