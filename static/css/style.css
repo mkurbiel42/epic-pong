@@ -19,7 +19,9 @@
 }
 
 #uiBox {
-	display: block;
+	display: grid;
+	grid-template-columns: 4fr 5fr 4fr;
+	padding-top: 20%;
 	position: absolute;
 	top: 0;
 	left: 0;
@@ -27,21 +29,20 @@
 	height: 100%;
 }
 
-#loginBox {
+.box {
+	margin: 0 auto;
+	height: fit-content;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
 	align-items: center;
+	align-content: center;
 	width: fit-content;
-	margin: 0 auto;
 	padding: 1.25em;
 	gap: 0.75em;
 	border: 2px solid var(--color-accent);
 	border-radius: 0.25rem;
-	font-size: 1.5em;
 	color: var(--color-accent);
-	top: 50%;
-	transform: translateY(50%);
 }
 
 #loginBox input {
@@ -83,24 +84,6 @@
 
 .blackedOut {
 	background-color: var(--color-dark-transparent);
-}
-
-#activeUsersBox {
-	position: absolute;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	width: fit-content;
-	gap: 0.75em;
-	border: 2px solid var(--color-accent);
-	border-radius: 0.25rem;
-	font-size: 1.15em;
-	padding: 0.5em 0.75em;
-	text-align: center;
-	color: var(--color-accent);
-	top: 10.5%;
-	left: calc(50% + 12rem);
 }
 
 #usersOnTheList {

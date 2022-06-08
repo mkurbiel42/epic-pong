@@ -1,44 +1,46 @@
 import * as Net from "./Net.js";
-import { createElement as c, editElement as e } from "./libs/amog.js";
+import { createElement as c, editElement as e, removeElements as r } from "./libs/amog.js";
 
 export default class UI {
 	constructor() {
-		this.activeUsersTimer = null;
-
 		this.root = document.getElementById("root");
+		this.asdasd = document.createElement("div");
 
 		this.uiBox = c(
 			"div",
 			{ id: "uiBox" },
+			(this.flexBreak = c("div", { className: "flexBreak" })),
 			(this.loginBox = c(
 				"div",
-				{ id: "loginBox" },
-				(this.usernameInput = c("input", { placeholder: "Enter nickname", id: "usernameInput" })),
+				{ className: "box", id: "loginBox" },
+
+				(this.usernameInput = c("input", {
+					placeholder: "Enter nickname",
+					id: "usernameInput"
+				})),
 				(this.loginButton = c("button", {}, "LOGIN"))
+			)),
+			(this.activeUsersBox = c(
+				"div",
+				{ className: "box", id: "activeUsersBox" },
+				"Logged in users"
 			))
 		);
-		this.root.appendChild(this.uiBox);
-
-		this.activeUsersBox = c("div", { id: "activeUsersBox" }, "Logged in users");
 
 		this.bindListeners();
-		this.showLoginBox();
-		this.showActiveUsers();
-		this.blackOutBG();
+		//this.initUI();
+		// this.blackOutBG();
 	}
 
 	bindListeners = () => {
 		this.loginButton.addEventListener("click", () => {
 			Net.loginUser(this.usernameInput.value);
+			r(this.loginBox);
 		});
 	};
 
-	showLoginBox = () => {
-		this.uiBox.appendChild(this.loginBox);
-	};
-
-	showActiveUsers = () => {
-		this.uiBox.appendChild(this.activeUsersBox);
+	initUI = () => {
+		this.root.appendChild(this.uiBox);
 	};
 
 	blackOutBG = () => {

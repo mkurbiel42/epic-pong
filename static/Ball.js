@@ -1,13 +1,14 @@
 export default class Ball extends THREE.Object3D {
 	constructor() {
 		super();
-		this.size = 20;
+		this.size = 30;
 		this.ballMaterial = new THREE.MeshPhongMaterial({
 			shininess: 20,
 			color: 0xab1637,
 			side: THREE.DoubleSide,
 			map: new THREE.TextureLoader().load("./gfx/woodTexture.jpg")
 		});
+		this.defaultPos = { x: 0, y: this.size, z: 0 };
 		// this.ballGeometry = new THREE.BoxGeometry(this.size, this.size, this.size);
 		this.ballGeometry = new THREE.SphereGeometry(this.size);
 

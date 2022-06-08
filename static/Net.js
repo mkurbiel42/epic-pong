@@ -1,5 +1,5 @@
 const ඞ = io("ws://localhost:2137", {
-	withCredentials: true,
+	//withCredentials: true,
 });
 
 export const loginUser = (username, room = "room1") => {

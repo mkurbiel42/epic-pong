@@ -81,3 +81,7 @@ function removeChildren(target) {
 		target.removeChild(target.lastChild);
 	}
 }
+
+export function removeElements(...targets) {
+	for (const target of targets) target.remove();
+}
