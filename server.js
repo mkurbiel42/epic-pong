@@ -18,14 +18,37 @@ app.use(express.static("static")); // serwuje stronę index.html
 // });
 
 const httpServer = createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+	cors: {
+		origin: "http://127.0.0.1:2137",
+		methods: ["GET", "POST"],
+		// allowedHeaders: ["cock"],
+		credentials: true,
+	},
+});
 
 io.on("connection", (socket) => {
-	socket.emit("message", "It's working, i think.");
-
 	socket.on("msg", (msg) => {
+		console.log(socket.rooms);
 		console.log(msg);
 		socket.emit("msg", "gaming");
+	});
+
+	socket.on("disconnecting", () => {
+		socket.leave();
+		console.log(socket.rooms);
+	});
+
+	socket.on("login", async (user, room = "room1") => {
+		socket.data.name = user;
+		socket.join(room);
+
+		const sockets = await io.in("room1").fetchSockets();
+		const gaming = Array.from(sockets).map((el, i) => {
+			return el.data.name;
+		});
+		//console.log("to coś", sockets);
+		io.to("room1").emit("usersList", gaming);
 	});
 });
 

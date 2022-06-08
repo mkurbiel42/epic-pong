@@ -1,4 +1,5 @@
 import * as Net from "./Net.js";
+import { createElement as c, editElement as e } from "./libs/amog.js";
 
 export default class UI {
 	constructor() {
@@ -6,29 +7,19 @@ export default class UI {
 
 		this.root = document.getElementById("root");
 
-		this.uiBox = document.createElement("div");
-		this.uiBox.id = "uiBox";
+		this.uiBox = c(
+			"div",
+			{ id: "uiBox" },
+			(this.loginBox = c(
+				"div",
+				{ id: "loginBox" },
+				(this.usernameInput = c("input", { placeholder: "Enter nickname", id: "usernameInput" })),
+				(this.loginButton = c("button", {}, "LOGIN"))
+			))
+		);
 		this.root.appendChild(this.uiBox);
 
-		this.loginBox = document.createElement("div");
-		this.loginBox.id = "loginBox";
-
-		this.usernameInput = document.createElement("input");
-		this.usernameInput.placeholder = "Wpisz swój nick";
-		this.loginButton = document.createElement("button");
-		this.resetButton = document.createElement("button");
-
-		this.loginButton.innerText = "LOGUJ";
-		this.resetButton.innerText = "RESET";
-
-		this.loginBox.innerText = "LOGOWANIE";
-		this.loginBox.appendChild(this.usernameInput);
-		this.loginBox.appendChild(this.loginButton);
-		this.loginBox.appendChild(this.resetButton);
-
-		this.activeUsersBox = document.createElement("div");
-		this.activeUsersBox.id = "activeUsersBox";
-		this.activeUsersBox.innerText = "Zalogowani użytkownicy";
+		this.activeUsersBox = c("div", { id: "activeUsersBox" }, "Logged in users");
 
 		this.bindListeners();
 		this.showLoginBox();
@@ -38,13 +29,7 @@ export default class UI {
 
 	bindListeners = () => {
 		this.loginButton.addEventListener("click", () => {
-			Net.loginToServer(this.usernameInput.value, (data) => {
-				console.log(data);
-			});
-		});
-
-		this.resetButton.addEventListener("click", () => {
-			Net.reset();
+			Net.loginUser(this.usernameInput.value);
 		});
 	};
 
@@ -62,5 +47,13 @@ export default class UI {
 
 	clearBG = () => {
 		this.uiBox.classList.remove("blackedOut");
+	};
+
+	updateUsers = (users) => {
+		var bonk = users.map((user) => {
+			return c("div", { className: "userOnTheList" }, user);
+		});
+		console.log(bonk);
+		e(this.activeUsersBox, "Logged in users", c("div", { id: "usersOnTheList" }, ...bonk));
 	};
 }

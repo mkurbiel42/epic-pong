@@ -1,28 +1,20 @@
-const defaultFetch = {
-	method: "POST",
-	headers: {
-		"Content-Type": "application/json"
-	}
+const ඞ = io("ws://localhost:2137", {
+	withCredentials: true,
+});
+
+export const loginUser = (username, room = "room1") => {
+	ඞ.emit("login", username, room);
 };
 
-export const loginToServer = (nickname, callback = (data) => {}) => {
-	fetch("/loginToServer", { ...defaultFetch, body: JSON.stringify({ nickname }) })
-		.then((response) => response.json())
-		.then((data) => {
-			callback(data);
-		});
+export const doDefault = () => {
+	ඞ.emit("msg", "pogchamp");
+	ඞ.emit("get room users");
+	ඞ.on("msg", (msg) => {
+		console.log(msg);
+	});
 };
 
-export const reset = () => {
-	fetch("/reset", { ...defaultFetch })
-		.then((response) => response.json())
-		.then((data) => {
-			console.log(data);
-		});
-};
-
-export const getActiveUsers = (callback = (data) => {}) => {
-	fetch("/getActiveUsers", { ...defaultFetch })
-		.then((response) => response.json())
-		.then((data) => callback(data));
-};
+ඞ.on("usersList", (users) => {
+	console.log(users);
+	window.ui.updateUsers(users);
+});

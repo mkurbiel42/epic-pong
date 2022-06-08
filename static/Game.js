@@ -17,7 +17,8 @@ export default class Game {
 		);
 
 		//ustawienie kamery dla gracza 1
-		this.camera.position.set(0, 400, 2400);
+		this.camera.position.set(0, 200, 150);
+		// this.camera.position.set(0, 400, 2400);
 		// this.camera.position.set(0, 1000, 50);
 		this.camera.lookAt(this.scene.position);
 
@@ -51,6 +52,7 @@ export default class Game {
 		this.addBoundaries();
 		this.addLines();
 		this.render();
+		// this.startGame();
 	};
 
 	startGame = () => {
@@ -92,7 +94,7 @@ export default class Game {
 	addBoundaries = () => {
 		let poses = [
 			{ x: this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
-			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 }
+			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
 		];
 		poses.forEach((pose) => {
 			let boundary = new Boundary(
@@ -151,9 +153,13 @@ export default class Game {
 		this.ballObject.position.x += Math.sin(this.angle) * this.speed /** 3*/;
 		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
 
+		this.camera.position.x += Math.sin(this.angle) * this.speed /** 3*/;
+		this.camera.position.z += Math.cos(this.angle) * this.speed;
+		this.camera.lookAt(this.ballObject.position);
+		this.camera.updateProjectionMatrix();
+
 		// obróć piłkę wokół własnej osi
-		this.ballObject.ball.rotation.x +=
-			this.speed * (this.speed / (this.ballObject.size * Math.PI));
+		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
 		if (
 			//sprawdź czy piłka nie odbija się od ściany
@@ -174,15 +180,13 @@ export default class Game {
 					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z - this.FIELD_SIZE.z) <=
-						this.ballObject.size) ||
+					Math.abs(this.ballObject.position.z - this.FIELD_SIZE.z) <= this.ballObject.size) ||
 				//hitbox dla drugiej deski
 				(this.ballObject.position.x >=
 					this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <=
-						this.ballObject.size)
+					Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <= this.ballObject.size)
 			) {
 				//odbicie piłki od deski
 				if (this.ballObject.position.z > 0 && this.currentMove == 1) {
@@ -190,27 +194,18 @@ export default class Game {
 						Math.PI -
 						this.angle -
 						(3 / 2) *
-							Math.asin(
-								(this.ballObject.position.x - this.plank1.position.x) /
-									this.plank1.width
-							);
+							Math.asin((this.ballObject.position.x - this.plank1.position.x) / this.plank1.width);
 					this.currentMove = -1;
 				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
 					this.angle =
 						Math.PI -
 						this.angle +
 						(3 / 2) *
-							Math.asin(
-								(this.ballObject.position.x - this.plank2.position.x) /
-									this.plank2.width
-							);
+							Math.asin((this.ballObject.position.x - this.plank2.position.x) / this.plank2.width);
 					this.currentMove = 1;
 				}
 			} else {
-				if (
-					Math.abs(this.ballObject.position.z) >
-					this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER
-				) {
+				if (Math.abs(this.ballObject.position.z) > this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER) {
 					this.ballObject.position.y -= this.speed / 2;
 					if (this.triggersActive) {
 						console.log("Punkt!");
@@ -221,6 +216,7 @@ export default class Game {
 							this.ballObject.setDefaultPos();
 							this.ballObject.rotation.y = this.angle;
 							this.triggersActive = true;
+							this.camera.position.set(0, 200, 150);
 						}, 2000);
 					}
 				}
@@ -235,9 +231,9 @@ export default class Game {
 				this.FIELD_SIZE.x - this.plank1.width / 2 - 2 * FLAT_SURFACES_THICKNESS - 12 &&
 			this.plank1.movingRight
 		) {
-			this.camera.position.x += this.plankSpeed;
 			this.plank1.position.x += this.plankSpeed * 1.25;
-			this.camera.updateProjectionMatrix();
+			// this.camera.position.x += this.plankSpeed;
+			// this.camera.updateProjectionMatrix();
 		}
 
 		if (
@@ -246,9 +242,9 @@ export default class Game {
 				-this.FIELD_SIZE.x + this.plank1.width / 2 + 2 * FLAT_SURFACES_THICKNESS + 12 &&
 			this.plank1.movingLeft
 		) {
-			this.camera.position.x -= this.plankSpeed;
 			this.plank1.position.x -= this.plankSpeed * 1.25;
-			this.camera.updateProjectionMatrix();
+			// this.camera.position.x -= this.plankSpeed;
+			// this.camera.updateProjectionMatrix();
 		}
 	};
 
@@ -259,6 +255,7 @@ export default class Game {
 	};
 
 	render = () => {
+		//console.log(new Date());
 		if (this.gameStarted) {
 			this.movePlankAccordingly();
 			this.moveBall();
