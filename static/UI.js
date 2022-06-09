@@ -16,7 +16,7 @@ export default class UI {
 
 				(this.usernameInput = c("input", {
 					placeholder: "Enter nickname",
-					id: "usernameInput"
+					id: "usernameInput",
 				})),
 				(this.loginButton = c("button", {}, "LOGIN"))
 			)),
@@ -28,8 +28,8 @@ export default class UI {
 		);
 
 		this.bindListeners();
-		//this.initUI();
-		// this.blackOutBG();
+		this.initUI();
+		this.blackOutBG();
 	}
 
 	bindListeners = () => {
@@ -52,6 +52,7 @@ export default class UI {
 	};
 
 	updateUsers = (users) => {
+		console.log(users);
 		var bonk = users.map((user) => {
 			return c("div", { className: "userOnTheList" }, user);
 		});

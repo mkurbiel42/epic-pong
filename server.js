@@ -10,22 +10,30 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("static")); // serwuje stronę index.html
 
-// const Datastore = require("nedb");
+const Datastore = require("nedb");
 
-// const dataCache = new Datastore({
-// 	filename: "dataCache.db",
-// 	autoload: true
-// });
+const dataCache = new Datastore({
+	filename: "dataCache.db",
+	autoload: true,
+});
+
+dataCache.remove({ dataType: "player" });
 
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
-		methods: ["GET", "POST"]
+		methods: ["GET", "POST"],
 		// allowedHeaders: ["cock"],
 		//credentials: true
-	}
+	},
 });
+
+const getUsersList = (callback, room = "lobby") => {
+	dataCache.find({ dataType: "player" }, (err, res) => {
+		callback(res);
+	});
+};
 
 io.on("connection", (socket) => {
 	socket.on("msg", (msg) => {
@@ -35,20 +43,42 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("disconnecting", () => {
+		console.log(socket.data.name);
+		if (socket.data.name) {
+			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
+				getUsersList((data) => {
+					io.to("lobby").emit(
+						"usersList",
+						data.map((elem) => elem.userName),
+						data
+					);
+				});
+			});
+		}
 		socket.leave("lobby");
-		//console.log(socket.rooms);
 	});
 
 	socket.on("login", async (user, room = "lobby") => {
 		socket.data.name = user;
 		socket.join(room);
-
-		const sockets = await io.in(room).fetchSockets();
-		const gaming = Array.from(sockets).map((el, i) => {
-			return el.data.name;
+		dataCache.insert({ dataType: "player", userName: user }, (err, newDoc) => {
+			getUsersList((data) => {
+				io.to(room).emit(
+					"usersList",
+					data.map((elem) => elem.userName),
+					data
+				);
+			});
 		});
-		//console.log("to coś", sockets);
-		io.to(room).emit("usersList", gaming);
+	});
+
+	socket.on("getUsersList", (...sus) => {
+		getUsersList((data) => {
+			socket.emit(
+				"usersList",
+				data.map((elem) => elem.userName)
+			);
+		}, "lobby");
 	});
 });
 
