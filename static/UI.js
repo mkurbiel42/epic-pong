@@ -16,7 +16,7 @@ export default class UI {
 
 				(this.usernameInput = c("input", {
 					placeholder: "Enter nickname",
-					id: "usernameInput",
+					id: "usernameInput"
 				})),
 				(this.loginButton = c("button", {}, "LOGIN"))
 			)),

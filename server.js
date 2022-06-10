@@ -14,7 +14,7 @@ const Datastore = require("nedb");
 
 const dataCache = new Datastore({
 	filename: "dataCache.db",
-	autoload: true,
+	autoload: true
 });
 
 dataCache.remove({ dataType: "player" });
@@ -23,10 +23,10 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
-		methods: ["GET", "POST"],
+		methods: ["GET", "POST"]
 		// allowedHeaders: ["cock"],
 		//credentials: true
-	},
+	}
 });
 
 const getUsersList = (callback, room = "lobby") => {
@@ -36,40 +36,12 @@ const getUsersList = (callback, room = "lobby") => {
 };
 
 io.on("connection", (socket) => {
+	socket.join("lobby");
+
 	socket.on("msg", (msg) => {
 		// console.log(socket.rooms);
 		console.log(msg);
 		socket.emit("msg", "gaming");
-	});
-
-	socket.on("disconnecting", () => {
-		console.log(socket.data.name);
-		if (socket.data.name) {
-			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
-				getUsersList((data) => {
-					io.to("lobby").emit(
-						"usersList",
-						data.map((elem) => elem.userName),
-						data
-					);
-				});
-			});
-		}
-		socket.leave("lobby");
-	});
-
-	socket.on("login", async (user, room = "lobby") => {
-		socket.data.name = user;
-		socket.join(room);
-		dataCache.insert({ dataType: "player", userName: user }, (err, newDoc) => {
-			getUsersList((data) => {
-				io.to(room).emit(
-					"usersList",
-					data.map((elem) => elem.userName),
-					data
-				);
-			});
-		});
 	});
 
 	socket.on("getUsersList", (...sus) => {
@@ -79,6 +51,34 @@ io.on("connection", (socket) => {
 				data.map((elem) => elem.userName)
 			);
 		}, "lobby");
+	});
+
+	socket.on("login", async (user, room = "lobby") => {
+		socket.data.name = user;
+		socket.join(room);
+		dataCache.insert({ dataType: "player", userName: user }, (err, newDoc) => {
+			getUsersList((data) => {
+				io.to(room).emit(
+					"usersList",
+					data.map((elem) => elem.userName)
+				);
+			});
+		});
+	});
+
+	socket.on("disconnecting", () => {
+		console.log(socket.data.name);
+		if (socket.data.name) {
+			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
+				getUsersList((data) => {
+					io.to("lobby").emit(
+						"usersList",
+						data.map((elem) => elem.userName)
+					);
+				});
+			});
+		}
+		socket.leave("lobby");
 	});
 });
 

@@ -11,11 +11,15 @@ export const init = () => {
 		window.ui.updateUsers(users);
 	});
 
+	ඞ.on("msg", (msg) => {
+		console.log(msg);
+	});
+
 	ඞ.emit("getUsersList");
 };
 
-export const loginUser = (username, room = "room1") => {
-	ඞ.emit("login", username, room);
+export const loginUser = (username) => {
+	ඞ.emit("login", username);
 };
 
 // export const doDefault = () => {

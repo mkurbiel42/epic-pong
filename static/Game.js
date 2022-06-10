@@ -7,6 +7,8 @@ import { FLAT_SURFACES_THICKNESS, SAFEAREA_MULTIPLIER } from "./Consts.js";
 
 export default class Game {
 	constructor() {
+		this.gameMode = "modern";
+
 		// definicje sceny i kamery
 		this.scene = new THREE.Scene();
 		this.camera = new THREE.PerspectiveCamera(
@@ -48,18 +50,25 @@ export default class Game {
 		this.addFloor();
 		this.addBoundaries();
 		this.addLines();
-		// this.addBall();
-		// this.addPlanks();
-		// this.startGame();
 		this.render();
+
+		// this.initGame()
+	};
+
+	initGame = () => {
+		this.addBall();
+		this.addPlanks();
+		this.startGame();
 	};
 
 	startGame = () => {
-		let waitTime = 1000;
+		let animationTime = 1000;
+		let delayTime = 1200;
 
 		new TWEEN.Tween(this.ballObject.position)
-			.to(this.ballObject.defaultPos, waitTime)
+			.to(this.ballObject.defaultPos, animationTime)
 			.easing(TWEEN.Easing.Bounce.Out)
+			.delay(delayTime)
 			.start();
 
 		this.setPlanksToDefaultPoses();
@@ -73,7 +82,7 @@ export default class Game {
 			this.ballObject.ball.rotation.y = -this.angle;
 			this.gameStarted = true;
 			this.gameStopped = false;
-		}, waitTime + 0.25);
+		}, animationTime + delayTime);
 	};
 
 	resetCamera = (withAnimaton = false) => {
@@ -81,7 +90,7 @@ export default class Game {
 			//ustawienie kamery dla gracza 1
 			new TWEEN.Tween(this.camera.position)
 				.to({ x: 0, y: 400, z: 2400 }, 800)
-				.easing(TWEEN.Easing.Bounce.Out)
+				.easing(TWEEN.Easing.Linear.None)
 				.start();
 			setTimeout(() => {
 				this.camera.lookAt(this.scene.position);
@@ -112,7 +121,7 @@ export default class Game {
 			this.currentlyMovingPlank = null;
 		}
 
-		if (this.currentlyMovingPlank && this.gameStarted) {
+		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "modern") {
 			let ballStoppingTime = 1600;
 			new TWEEN.Tween(this)
 				.to({ speed: 0 }, ballStoppingTime)
@@ -160,7 +169,7 @@ export default class Game {
 	addBoundaries = () => {
 		let poses = [
 			{ x: this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
-			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
+			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 }
 		];
 		poses.forEach((pose) => {
 			let boundary = new Boundary(
@@ -210,12 +219,17 @@ export default class Game {
 	};
 
 	setPlanksToDefaultPoses = () => {
+		let time = 1300;
+		this.allowPlankMovement = false;
+		setTimeout(() => {
+			this.allowPlankMovement = true;
+		}, time);
 		new TWEEN.Tween(this.plank1.position)
-			.to(this.plank1.defaultPos, 1300)
+			.to(this.plank1.defaultPos, time)
 			.easing(TWEEN.Easing.Bounce.Out)
 			.start();
 		new TWEEN.Tween(this.plank2.position)
-			.to(this.plank2.defaultPos, 1300)
+			.to(this.plank2.defaultPos, time)
 			.easing(TWEEN.Easing.Bounce.Out)
 			.start();
 	};
@@ -240,7 +254,8 @@ export default class Game {
 		// this.camera.updateProjectionMatrix();
 
 		// obróć piłkę wokół własnej osi
-		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
+		this.ballObject.ball.rotation.x +=
+			this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
 		if (
 			//sprawdź czy piłka nie odbija się od ściany
@@ -260,13 +275,15 @@ export default class Game {
 					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z - this.FIELD_SIZE.z) <= this.ballObject.size) ||
+					Math.abs(this.ballObject.position.z - this.FIELD_SIZE.z) <=
+						this.ballObject.size) ||
 				//hitbox dla drugiej deski
 				(this.ballObject.position.x >=
 					this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <= this.ballObject.size)
+					Math.abs(this.ballObject.position.z + this.FIELD_SIZE.z) <=
+						this.ballObject.size)
 			) {
 				//odbicie piłki od deski
 				if (this.ballObject.position.z > 0 && this.currentMove == 1) {
@@ -274,28 +291,39 @@ export default class Game {
 						Math.PI -
 						this.angle -
 						(3 / 2) *
-							Math.asin((this.ballObject.position.x - this.plank1.position.x) / this.plank1.width);
+							Math.asin(
+								(this.ballObject.position.x - this.plank1.position.x) /
+									this.plank1.width
+							);
 					this.updateCurrentMove(-1);
 				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
 					this.angle =
 						Math.PI -
 						this.angle +
 						(3 / 2) *
-							Math.asin((this.ballObject.position.x - this.plank2.position.x) / this.plank2.width);
+							Math.asin(
+								(this.ballObject.position.x - this.plank2.position.x) /
+									this.plank2.width
+							);
 					this.updateCurrentMove(1);
 				}
 			} else {
-				if (Math.abs(this.ballObject.position.z) > this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER) {
+				if (
+					Math.abs(this.ballObject.position.z) >
+					this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER
+				) {
 					this.ballObject.position.y -= this.speed / 2;
 					if (!this.gameStopped) {
 						console.log("Punkt!");
 						this.gameStopped = true;
-						this.resetCamera(true);
 						setTimeout(() => {
-							this.ballObject.position.set(0, 400, 0);
-							this.gameStopped = false;
-							this.gameStarted = false;
-							// this.startGame();
+							this.resetCamera(true);
+							setTimeout(() => {
+								this.ballObject.position.set(0, 400, 0);
+								this.gameStopped = false;
+								this.gameStarted = false;
+								this.startGame();
+							}, 550);
 						}, 2000);
 					}
 				}
@@ -305,7 +333,7 @@ export default class Game {
 
 	movePlankAccordingly = () => {
 		if (!this.currentlyMovingPlank) return;
-		if (!this.allowPlankMovement || this.gameStoppedd) return;
+		if (!this.allowPlankMovement || this.gameStopped) return;
 
 		let multiplier = this.currentMove;
 
