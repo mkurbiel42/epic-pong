@@ -39,12 +39,11 @@ io.on("connection", (socket) => {
 	socket.join("lobby");
 
 	socket.on("msg", (msg) => {
-		// console.log(socket.rooms);
 		console.log(msg);
 		socket.emit("msg", "gaming");
 	});
 
-	socket.on("getUsersList", (...sus) => {
+	socket.on("getUsersList", () => {
 		getUsersList((data) => {
 			socket.emit(
 				"usersList",
@@ -67,7 +66,6 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("disconnecting", () => {
-		console.log(socket.data.name);
 		if (socket.data.name) {
 			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
 				getUsersList((data) => {
@@ -78,7 +76,6 @@ io.on("connection", (socket) => {
 				});
 			});
 		}
-		socket.leave("lobby");
 	});
 });
 
