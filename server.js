@@ -29,7 +29,7 @@ const io = new Server(httpServer, {
 	}
 });
 
-const getUsersList = (callback, room = "lobby") => {
+const getUsersList = (callback) => {
 	dataCache.find({ dataType: "player" }, (err, res) => {
 		callback(res);
 	});
@@ -55,7 +55,7 @@ io.on("connection", (socket) => {
 	socket.on("login", async (user, room = "lobby") => {
 		socket.data.name = user;
 		socket.join(room);
-		dataCache.insert({ dataType: "player", userName: user }, (err, newDoc) => {
+		dataCache.insert({ dataType: "player", userName: user, roomName: room }, (err, newDoc) => {
 			getUsersList((data) => {
 				io.to(room).emit(
 					"usersList",

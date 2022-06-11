@@ -7,17 +7,50 @@ import { FLAT_SURFACES_THICKNESS, SAFEAREA_MULTIPLIER } from "./Consts.js";
 
 export default class Game {
 	constructor() {
-		this.gameMode = "modern";
+		// domyślne zmienne
+		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
+		this.gameMode = "classic";
+		this.isFirstMove = true;
+		this.firstMove = 0;
+		// this.firstlyMoving = 0; //💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀
+
+		this.paletkiSize = [
+			this.FIELD_SIZE.z / 3.14159,
+			this.FIELD_SIZE.z / 4.2,
+			this.FIELD_SIZE.z / 6.9,
+			this.FIELD_SIZE.z / 7.312,
+			this.FIELD_SIZE.z / 9.11,
+			this.FIELD_SIZE.z / 13.37
+		];
+		// this.paletkiSize = [
+		// 	this.FIELD_SIZE.z / 12.5,
+		// 	this.FIELD_SIZE.z / 2.5,
+		// 	this.FIELD_SIZE.z / 3,
+		// 	this.FIELD_SIZE.z / 3.5,
+		// 	this.FIELD_SIZE.z / 9.11,
+		// 	this.FIELD_SIZE.z / 13.37
+		// ];
+		this.maxMoves = this.paletkiSize.length - 1;
+
+		this.aspect = window.innerWidth / window.innerHeight;
 		// definicje sceny i kamery
 		this.scene = new THREE.Scene();
-		this.camera = new THREE.PerspectiveCamera(
-			90,
-			window.innerWidth / window.innerHeight,
-			0.1,
+		this.camera3d = new THREE.PerspectiveCamera(90, this.aspect, 0.1, 10000);
+
+		//this.camera2d = new THREE.OrthographicCamera(-1920, 1920, 1080, -1080, 1, 10000);
+		this.camera2d = new THREE.OrthographicCamera(
+			(this.FIELD_SIZE.x * -1 - 200) * this.aspect,
+			(this.FIELD_SIZE.x * 1 + 200) * this.aspect,
+			this.FIELD_SIZE.x * 1 + 200,
+			this.FIELD_SIZE.x * -1 - 200,
+			1,
 			10000
 		);
-		this.resetCamera();
+
+		this.cam3dMode();
+
+		this.resetCamera(false, "3d");
 
 		// dodanie pomocniczych osi (usunąć później!)
 		// this.axes = new THREE.AxesHelper(1000);
@@ -28,9 +61,6 @@ export default class Game {
 		this.renderer.setClearColor(0x143891);
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 		document.getElementById("root").appendChild(this.renderer.domElement);
-
-		// domyślne zmienne
-		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
 		this.gameStarted = false;
 		this.gameStopped = false;
@@ -52,7 +82,7 @@ export default class Game {
 		this.addLines();
 		this.render();
 
-		// this.initGame()
+		this.initGame();
 	};
 
 	initGame = () => {
@@ -62,6 +92,8 @@ export default class Game {
 	};
 
 	startGame = () => {
+		this.moveCounter = 0;
+		this.startingPlayer = 0;
 		let animationTime = 1000;
 		let delayTime = 1200;
 
@@ -78,26 +110,46 @@ export default class Game {
 			this.defaultSpeed = 18;
 			this.speed = this.defaultSpeed;
 			this.plankSpeed = 12;
-			this.ballObject.rotation.y = this.angle;
-			this.ballObject.ball.rotation.y = -this.angle;
+			// this.ballObject.rotation.y = this.angle;
+			// this.ballObject.ball.rotation.y = -this.angle;
 			this.gameStarted = true;
 			this.gameStopped = false;
 		}, animationTime + delayTime);
 	};
 
-	resetCamera = (withAnimaton = false) => {
+	resetCamera = (withAnimaton = false, mode = "3d") => {
+		let cameraPos = !this.isFirstMove ? { x: 0, y: 1800, z: 0 } : { x: 0, y: 400, z: 2400 };
+		let delay = !this.isFirstMove ? 1300 : 0;
+		let rotation = !this.isFirstMove ? Math.PI / 2 : 0;
+		let camPos = this.camera.position;
+
+		if (mode == "3d") {
+			this.cam3dMode();
+			this.camera.position.set(camPos.x, camPos.y, camPos.z);
+			this.camera.lookAt(this.scene.position);
+		} else {
+			this.cam2dMode();
+			this.camera.position.set(0, 1800, 0);
+			this.camera.lookAt(this.scene.position);
+			this.camera.rotation.z = Math.PI / 2;
+		}
+
 		if (withAnimaton) {
 			//ustawienie kamery dla gracza 1
-			new TWEEN.Tween(this.camera.position)
-				.to({ x: 0, y: 400, z: 2400 }, 800)
-				.easing(TWEEN.Easing.Linear.None)
-				.start();
-			setTimeout(() => {
-				this.camera.lookAt(this.scene.position);
-				this.camera.updateProjectionMatrix();
-			}, 1000);
+			if (this.camera === this.camera3d) {
+				new TWEEN.Tween(this.camera.position)
+					.to(cameraPos, 800)
+					.delay(delay)
+					.easing(TWEEN.Easing.Linear.None)
+					.start();
+				setTimeout(() => {
+					this.camera.lookAt(this.scene.position);
+					this.camera.rotation.z = rotation;
+					this.camera.updateProjectionMatrix();
+				}, 1000 + delay);
+			}
 		} else {
-			this.camera.position.set(0, 400, 2400);
+			this.camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
 			this.camera.lookAt(this.scene.position);
 			this.camera.updateProjectionMatrix();
 		}
@@ -107,12 +159,43 @@ export default class Game {
 		do {
 			this.angle = Math.random() * 2 * Math.PI - Math.PI;
 		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 9);
-		Math.abs(this.angle) > Math.PI / 2 ? this.updateCurrentMove(-1) : this.updateCurrentMove(1);
+		if (Math.abs(this.angle) > Math.PI / 2) {
+			this.updateCurrentMove(-1, true);
+			this.firstMove = -1;
+		} else {
+			this.updateCurrentMove(1, true);
+			this.firstMove = 1;
+		}
+
+		// please don't svelte
+		//		please don't svelte
+		// 			please don't svelte
+		// 				please don't svelte
+		// 					please don't svelte
+		// 						please don't svelte
+		// 							please don't svelte
+		// 									please don't svelte
+		// 										please don't svelte
+		// 											please don't svelte
+
 		this.allowPlankMovement = true;
 	};
 
-	updateCurrentMove = (value) => {
+	updateCurrentMove = (value, dont = false) => {
+		if (this.gameMode === "epic") {
+			if (this.currentMove == this.firstMove && !dont) {
+				this.moveCounter += 1;
+				console.log(this.moveCounter);
+			}
+
+			this.currentlyMovingPlank.editWidth(
+				this.moveCounter <= this.maxMoves
+					? this.paletkiSize[this.moveCounter]
+					: this.paletkiSize[this.maxMoves]
+			);
+		}
 		this.currentMove = value;
+
 		if (value == -1) {
 			this.currentlyMovingPlank = this.plank2;
 		} else if (value == 1) {
@@ -121,7 +204,15 @@ export default class Game {
 			this.currentlyMovingPlank = null;
 		}
 
-		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "modern") {
+		if (this.gameMode !== "epic") {
+			this.speed *= 1.15;
+		}
+
+		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "epic") {
+			if (this.isFirstMove) {
+				this.isFirstMove = false;
+				this.resetCamera(true, "2d");
+			}
 			let ballStoppingTime = 1600;
 			new TWEEN.Tween(this)
 				.to({ speed: 0 }, ballStoppingTime)
@@ -147,6 +238,7 @@ export default class Game {
 
 	addBall = () => {
 		// utworzenie piłki
+		this.isFirstMove = true;
 		this.ballObject = new Ball();
 		this.ballObject.position.set(0, 400, 0);
 		this.scene.add(this.ballObject);
@@ -183,11 +275,14 @@ export default class Game {
 	};
 
 	addPlanks = () => {
-		this.plank1 = new Plank(this.FIELD_SIZE.z / 12.5, this.FIELD_SIZE.z + 12);
+		this.defaultPaletkaWidth =
+			this.gameMode === "epic" ? this.paletkiSize[0] : this.paletkiSize[this.maxMoves];
+
+		this.plank1 = new Plank(this.defaultPaletkaWidth, this.FIELD_SIZE.z);
 		this.plank1.name = "plank1";
 		this.scene.add(this.plank1);
 
-		this.plank2 = new Plank(this.FIELD_SIZE.z / 12.5, -this.FIELD_SIZE.z - 12);
+		this.plank2 = new Plank(this.defaultPaletkaWidth, -this.FIELD_SIZE.z);
 		this.plank2.name = "plank2";
 		this.scene.add(this.plank2);
 
@@ -267,7 +362,10 @@ export default class Game {
 			this.ballObject.rotation.y = this.angle;
 		}
 
-		if (Math.abs(this.ballObject.position.z) >= this.FIELD_SIZE.z - this.ballObject.size) {
+		if (
+			Math.abs(this.ballObject.position.z) >=
+			this.FIELD_SIZE.z - this.ballObject.size - FLAT_SURFACES_THICKNESS / 2
+		) {
 			//sprawdzenie czy cała piłka przekracza linię deski
 			if (
 				//hitbox dla pierwszej deski
@@ -293,17 +391,18 @@ export default class Game {
 						(3 / 2) *
 							Math.asin(
 								(this.ballObject.position.x - this.plank1.position.x) /
-									this.plank1.width
+									(this.plank2.width + this.ballObject.size * 2)
 							);
 					this.updateCurrentMove(-1);
 				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
+					console.log();
 					this.angle =
 						Math.PI -
 						this.angle +
 						(3 / 2) *
 							Math.asin(
 								(this.ballObject.position.x - this.plank2.position.x) /
-									this.plank2.width
+									(this.plank2.width + this.ballObject.size * 2)
 							);
 					this.updateCurrentMove(1);
 				}
@@ -317,11 +416,15 @@ export default class Game {
 						console.log("Punkt!");
 						this.gameStopped = true;
 						setTimeout(() => {
-							this.resetCamera(true);
+							this.isFirstMove = true;
 							setTimeout(() => {
+								this.speed = this.defaultSpeed;
+								this.plank1.editWidth(this.defaultPaletkaWidth);
+								this.plank2.editWidth(this.defaultPaletkaWidth);
 								this.ballObject.position.set(0, 400, 0);
 								this.gameStopped = false;
 								this.gameStarted = false;
+								this.resetCamera(false, "3d");
 								this.startGame();
 							}, 550);
 						}, 2000);
@@ -347,8 +450,8 @@ export default class Game {
 			this.currentlyMovingPlank.movingRight
 		) {
 			this.currentlyMovingPlank.position.x += this.plankSpeed * 1.25 * multiplier;
-			this.camera.position.x += this.plankSpeed * multiplier;
-			this.camera.updateProjectionMatrix();
+			// this.camera.position.x += this.plankSpeed * multiplier;
+			// this.camera.updateProjectionMatrix();
 		}
 
 		if (
@@ -361,13 +464,31 @@ export default class Game {
 			this.currentlyMovingPlank.movingLeft
 		) {
 			this.currentlyMovingPlank.position.x -= this.plankSpeed * 1.25 * multiplier;
-			this.camera.position.x -= this.plankSpeed * multiplier;
-			this.camera.updateProjectionMatrix();
+			// this.camera.position.x -= this.plankSpeed * multiplier;
+			// this.camera.updateProjectionMatrix();
 		}
 	};
 
+	cam3dMode = () => {
+		this.camera = this.camera3d;
+		console.log("3d");
+	};
+
+	cam2dMode = () => {
+		this.camera = this.camera2d;
+		console.log("2d");
+	};
+
 	windowResize = () => {
-		this.camera.aspect = window.innerWidth / window.innerHeight;
+		this.aspect = window.innerWidth / window.innerHeight;
+		if (this.camera === this.camera3d) {
+			this.camera.aspect = this.aspect;
+		} else {
+			this.camera.left = (this.FIELD_SIZE.x * -1 - 200) * this.aspect;
+			this.camera.right = (this.FIELD_SIZE.x * 1 + 200) * this.aspect;
+			this.camera.top = this.FIELD_SIZE.x * 1 + 200;
+			this.camera.bottom = this.FIELD_SIZE.x * -1 - 200;
+		}
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
 	};

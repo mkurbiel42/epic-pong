@@ -29,4 +29,9 @@ export default class Plank extends THREE.Mesh {
 	setDefaultPos = () => {
 		this.position.set(0, this.height / 2, this.z);
 	};
+
+	editWidth = (newWidth) => {
+		this.geometry = new THREE.BoxGeometry(newWidth, this.height, FLAT_SURFACES_THICKNESS);
+		this.width = newWidth;
+	};
 }

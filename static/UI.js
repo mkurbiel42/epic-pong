@@ -28,8 +28,8 @@ export default class UI {
 		);
 
 		this.bindListeners();
-		this.initUI();
-		this.blackOutBG();
+		// this.initUI();
+		// this.blackOutBG();
 	}
 
 	bindListeners = () => {
