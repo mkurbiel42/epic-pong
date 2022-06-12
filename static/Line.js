@@ -8,7 +8,7 @@ export default class Line extends THREE.Mesh {
 		this.z = z;
 		this.geometry = new THREE.PlaneGeometry(width, LINE_WIDTH);
 		this.material = new THREE.MeshPhongMaterial({ color: 0xefefef, shininess: 55 });
-		this.position.set(x, 7, z);
+		this.position.set(x, 3, z);
 		this.rotation.x = -Math.PI / 2;
 	}
 }

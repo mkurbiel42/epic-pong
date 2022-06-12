@@ -1,21 +1,25 @@
-let ඞ = null;
+let ඞ;
 
 export const init = () => {
-	console.log("Działa");
-	ඞ = io("ws://localhost:2137", {
-		//withCredentials: true,
-	});
-
-	ඞ.on("usersList", (users) => {
-		console.log(users);
-		window.ui.updateUsers(users);
-	});
+	ඞ = io();
+	ඞ.emit("getUsersList");
 
 	ඞ.on("msg", (msg) => {
 		console.log(msg);
 	});
 
-	ඞ.emit("getUsersList");
+	ඞ.on("error", (err) => {
+		console.log(err);
+	});
+
+	ඞ.on("usersList", (users) => {
+		window.ui.updateUsers(users);
+	});
+
+	ඞ.on("userLoggedIn", (user) => {
+		window.ui.username = user;
+		window.ui.viewMainMenu();
+	});
 };
 
 export const loginUser = (username) => {

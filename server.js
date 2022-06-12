@@ -36,7 +36,7 @@ const getUsersList = (callback) => {
 };
 
 io.on("connection", (socket) => {
-	socket.join("lobby");
+	socket.join("_lobby");
 
 	socket.on("msg", (msg) => {
 		console.log(msg);
@@ -49,19 +49,44 @@ io.on("connection", (socket) => {
 				"usersList",
 				data.map((elem) => elem.userName)
 			);
-		}, "lobby");
+		}, "_lobby");
 	});
 
-	socket.on("login", async (user, room = "lobby") => {
-		socket.data.name = user;
-		socket.join(room);
-		dataCache.insert({ dataType: "player", userName: user, roomName: room }, (err, newDoc) => {
-			getUsersList((data) => {
-				io.to(room).emit(
-					"usersList",
-					data.map((elem) => elem.userName)
+	socket.on("login", async (user, room = "_lobby") => {
+		if (user === "") {
+			socket.emit("error", "Nazwa użytkownika nie może być pusta.");
+			return;
+		}
+
+		if (user.substring(0, 1) === "_") {
+			socket.emit("error", "Nazwa użytkownika nie może zaczynać się od '_'.");
+			return;
+		}
+
+		if (user.length > 10) {
+			socket.emit("error", "Nazwa użytkownika jest zbyt długa");
+			return;
+		}
+
+		dataCache.findOne({ dataType: "player", userName: user }, (err, doc) => {
+			if (!doc) {
+				socket.data.name = user;
+				socket.join(room);
+				socket.emit("userLoggedIn", user);
+				dataCache.insert(
+					{ dataType: "player", userName: user, roomName: room },
+					(err, newDoc) => {
+						getUsersList((data) => {
+							io.to(room).emit(
+								"usersList",
+								data.map((elem) => elem.userName)
+							);
+						});
+					}
 				);
-			});
+			} else {
+				socket.emit("error", "Podana nazwa jest obecnie zajęta.");
+			}
 		});
 	});
 
@@ -69,7 +94,7 @@ io.on("connection", (socket) => {
 		if (socket.data.name) {
 			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
 				getUsersList((data) => {
-					io.to("lobby").emit(
+					io.to("_lobby").emit(
 						"usersList",
 						data.map((elem) => elem.userName)
 					);

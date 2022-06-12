@@ -10,7 +10,7 @@ export default class Game {
 		// domyślne zmienne
 		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
-		this.gameMode = "classic";
+		this.gameMode = "epic";
 		this.isFirstMove = true;
 		this.firstMove = 0;
 		// this.firstlyMoving = 0; //💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀💀
@@ -82,7 +82,7 @@ export default class Game {
 		this.addLines();
 		this.render();
 
-		this.initGame();
+		// this.initGame();
 	};
 
 	initGame = () => {
@@ -391,7 +391,7 @@ export default class Game {
 						(3 / 2) *
 							Math.asin(
 								(this.ballObject.position.x - this.plank1.position.x) /
-									(this.plank2.width + this.ballObject.size * 2)
+									(this.plank1.width + this.ballObject.size * 2)
 							);
 					this.updateCurrentMove(-1);
 				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
