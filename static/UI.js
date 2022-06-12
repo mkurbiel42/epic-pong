@@ -30,8 +30,8 @@ export default class UI {
 		);
 
 		this.bindListeners();
-		// this.initUI();
-		// this.blackOutBG();
+		this.initUI();
+		this.blackOutBG();
 	}
 
 	bindListeners = () => {
@@ -55,7 +55,7 @@ export default class UI {
 	updateUsers = (users) => {
 		console.log(users);
 		var bonk = users.sort().map((user) => {
-			if (user === this.username) {
+			if (user === Net.ඞ.data?.username) {
 				return c("div", { className: "userOnTheList username" }, user);
 			} else {
 				return c("div", { className: "userOnTheList" }, user);
@@ -82,7 +82,7 @@ export default class UI {
 						"p",
 						{ id: "usernameLabel" },
 						`Username:`,
-						c("span", { className: "username" }, ` ${this.username}`)
+						c("span", { className: "username" }, ` ${Net.ඞ.data.username}`)
 					),
 
 					c(
@@ -104,12 +104,29 @@ export default class UI {
 						{ className: "section" },
 						(this.createRoomButton = c(
 							"button",
-							{ className: "btn-secondary" },
+							{
+								className: "btn-secondary",
+								onclick: () => {
+									Net.joinRoom(
+										this.roomNameInput.value,
+										this.epicnessSwitch.checked // (tociej moment) ? true : false
+									);
+								}
+							},
 							"Create"
 						)),
-						(this.joinRandomButton = c("button", {}, "Join random"))
+						(this.joinRoomButton = c("button", { className: "btn-secondary" }, "Join"))
 					),
-					(this.joinRoomButton = c("button", { className: "btn-big" }, "Join"))
+					(this.joinRandomButton = c(
+						"button",
+						{
+							className: "btn-big",
+							onclick: () => {
+								Net.joinRandom();
+							}
+						},
+						"Join random"
+					))
 				)),
 				this.activeUsersBox
 			))

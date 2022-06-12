@@ -2,6 +2,8 @@ export let ඞ;
 
 export const init = () => {
 	ඞ = io();
+	ඞ.data = {};
+
 	ඞ.emit("getUsersList");
 
 	ඞ.on("msg", (msg) => {
@@ -17,13 +19,22 @@ export const init = () => {
 	});
 
 	ඞ.on("userLoggedIn", (user) => {
-		window.ui.username = user;
+		ඞ.data.username = user;
 		window.ui.viewMainMenu();
 	});
 };
 
 export const loginUser = (username) => {
 	ඞ.emit("login", username);
+};
+
+export const joinRoom = (roomName, epicnessSwitch) => {
+	console.log(roomName);
+	ඞ.emit("joinRoom", roomName, epicnessSwitch);
+};
+
+export const joinRandom = () => {
+	ඞ.emit("joinRandom");
 };
 
 // export const doDefault = () => {

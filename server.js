@@ -6,9 +6,26 @@ var app = express();
 const PORT = 2137;
 var path = require("path");
 
+/////////////////
+//             //
+//  hehe 4/20  //
+//	 		   //
+/////////////////
+
+// please don't svelte
+//		please don't svelte
+// 			please don't svelte
+// 				please don't svelte
+// 					please don't svelte
+// 						please don't svelte
+// 							please don't svelte
+// 									please don't svelte
+// 										please don't svelte
+// 											please don't svelte
+
 app.use(cors());
 app.use(express.json());
-app.use(express.static("static")); // serwuje stronę index.html
+app.use(express.static("static")); // serwuje stronę index.html jak tak to spoko
 
 const Datastore = require("nedb");
 
@@ -17,8 +34,9 @@ const dataCache = new Datastore({
 	autoload: true
 });
 
-dataCache.remove({ dataType: "player" });
+//svelte my beloved
 
+dataCache.remove({}, { multi: true });
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
@@ -70,7 +88,7 @@ io.on("connection", (socket) => {
 
 		dataCache.findOne({ dataType: "player", userName: user }, (err, doc) => {
 			if (!doc) {
-				socket.data.name = user;
+				socket.data.username = user;
 				socket.join(room);
 				socket.emit("userLoggedIn", user);
 				dataCache.insert(
@@ -90,9 +108,138 @@ io.on("connection", (socket) => {
 		});
 	});
 
+	socket.on("joinRandom", async () => {
+		dataCache.find({ dataType: "room" }, (err, docs) => {
+			docs = docs.filter((doc) => doc.players == 1);
+			if (docs.length > 0) {
+				let currentRoom = docs[Math.floor(Math.random() * (docs.length - 1))];
+				console.log(currentRoom);
+
+				dataCache.update(
+					{ dataType: "room", roomName: currentRoom.roomName },
+					{ $set: { players: 2 } },
+					{},
+					(err) => {
+						if (err) console.log(err);
+					}
+				);
+				dataCache.update(
+					{ dataType: "player", userName: socket.data.username },
+					{ $set: { roomName: currentRoom.roomName } },
+					{},
+					(err) => {
+						console.log("update poszedł");
+						if (err) console.log(err);
+					}
+				);
+			} else {
+				let roomName = [...Array(10)].map(() => Math.random().toString(36)[2]).join("");
+				let epicnessSwitch = Math.random() < 0.5;
+
+				console.log(roomName, epicnessSwitch);
+				dataCache.insert(
+					{
+						dataType: "room",
+						roomName: roomName,
+						epicnessSwitch: epicnessSwitch,
+						players: 1
+					},
+					(err, newDoc) => {
+						console.log(roomName);
+						console.log(socket.data);
+						dataCache.update(
+							{ dataType: "player", userName: socket.data.username },
+							{ $set: { roomName: roomName } },
+							{},
+							(err) => {
+								console.log("update poszedł");
+								if (err) console.log(err);
+							}
+						);
+					}
+				);
+			}
+		});
+	});
+
+	socket.on("joinRoom", async (roomName, epicnessSwitch) => {
+		dataCache.findOne({ dataType: "room", roomName: roomName }, (err, doc) => {
+			if (doc) {
+				if (doc.players < 2) {
+					//-5XD
+					console.log("[object Object]");
+					socket.join(roomName);
+					dataCache.update(
+						{ dataType: "room", roomName: roomName },
+						{ $set: { players: 2 } },
+						{},
+						(err) => {
+							if (err) console.log(err);
+						}
+					);
+					dataCache.update(
+						{ dataType: "player", userName: socket.data.username },
+						{ $set: { roomName: roomName } },
+						{},
+						(err) => {
+							console.log("update poszedł");
+							if (err) console.log(err);
+						}
+					);
+				} else {
+					socket.emit("error", "Too many players, room is full");
+				}
+			} else {
+				socket.join(roomName);
+
+				socket.emit("roomCreated", roomName);
+				dataCache.insert(
+					{
+						dataType: "room",
+						roomName: roomName,
+						epicnessSwitch: epicnessSwitch,
+						players: 1
+					},
+					(err, newDoc) => {
+						console.log(roomName);
+						console.log(socket.data);
+						dataCache.update(
+							{ dataType: "player", userName: socket.data.username },
+							{ $set: { roomName: roomName } },
+							{},
+							(err) => {
+								console.log("update poszedł");
+								if (err) console.log(err);
+							}
+						);
+					}
+				);
+			}
+		});
+	});
+
 	socket.on("disconnecting", () => {
-		if (socket.data.name) {
-			dataCache.remove({ dataType: "player", userName: socket.data.name }, () => {
+		if (socket.data.username) {
+			dataCache.remove({ dataType: "player", userName: socket.data.username }, () => {
+				if (socket.rooms > 1) {
+					let bruh = socket.rooms.filter((room) => {
+						return room != "_lobby" && room != socket.id;
+					});
+					if (bruh.length > 0) {
+						dataCache.findOne({ dataType: "room", roomName: bruh[0] }, (err, doc) => {
+							console.log(doc);
+							if (doc) {
+								if (doc.players == 1) {
+									dataCache.remove({ dataType: "room", roomName: doc.roomName });
+								} else {
+									io.to(doc.roomName).emit("victory royale", "user left"); //yeah fortnite we bout tiog ett down get down ten kills on the board right now just wiped out tomato town
+									dataCache.remove({ dataType: "room", roomName: doc.roomName });
+								}
+							}
+						});
+					}
+				}
+
 				getUsersList((data) => {
 					io.to("_lobby").emit(
 						"usersList",

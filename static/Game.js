@@ -83,7 +83,7 @@ export default class Game {
 		this.addLines();
 		this.render();
 
-		this.initGame();
+		// this.initGame();
 	};
 
 	initGame = () => {
