@@ -107,6 +107,10 @@
 	width: 100%;
 }
 
+#roomsMenu input {
+	max-width: 14ch;
+}
+
 input {
 	border: 1px solid var(--color-accent);
 	font-size: var(--font-size);
@@ -132,8 +136,8 @@ input[type="checkbox"] {
 button {
 	font-size: var(--font-size);
 	padding: 0.45em 0.9em;
+	border: 1px solid var(--color-accent);
 	border-radius: var(--border-radius);
-	border: 1px solid rgba(0, 0, 0, 0.8);
 	font-weight: bold;
 	background-color: var(--color-accent);
 	cursor: pointer;
@@ -144,10 +148,14 @@ button {
 	background-color: transparent;
 	color: var(--color-accent);
 	border: 1px solid var(--color-accent);
-	outline: 1px solid var(--color-accent);
 }
+
 .btn-secondary:hover {
 	color: black;
+}
+
+.btn-big {
+	font-size: 1em;
 }
 
 button:hover {
@@ -187,7 +195,12 @@ input:focus-within {
 	display: block;
 	text-align: center;
 }
+
 .username {
 	font-weight: bold;
 	color: var(--color-red);
+}
+
+.pb-45 {
+	padding-bottom: 0.45em;
 }

@@ -30,8 +30,8 @@ export default class UI {
 		);
 
 		this.bindListeners();
-		this.initUI();
-		this.blackOutBG();
+		// this.initUI();
+		// this.blackOutBG();
 	}
 
 	bindListeners = () => {
@@ -88,7 +88,7 @@ export default class UI {
 					c(
 						"div",
 						{ className: "section" },
-						(this.roomLabel = c("p", { className: "label-sm" }, "Room name:")),
+						(this.roomLabel = c("p", { className: "label-sm pb-45" }, "Room name:")),
 						(this.roomNameInput = c("input", {
 							className: "txt-al-left",
 							maxLength: 10
@@ -102,13 +102,14 @@ export default class UI {
 					c(
 						"div",
 						{ className: "section" },
-						(this.joinCreateButton = c(
+						(this.createRoomButton = c(
 							"button",
 							{ className: "btn-secondary" },
 							"Create"
 						)),
-						(this.joinRoomButton = c("button", {}, "Join"))
-					)
+						(this.joinRandomButton = c("button", {}, "Join random"))
+					),
+					(this.joinRoomButton = c("button", { className: "btn-big" }, "Join"))
 				)),
 				this.activeUsersBox
 			))

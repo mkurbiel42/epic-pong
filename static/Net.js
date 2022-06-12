@@ -1,4 +1,4 @@
-let ඞ;
+export let ඞ;
 
 export const init = () => {
 	ඞ = io();
