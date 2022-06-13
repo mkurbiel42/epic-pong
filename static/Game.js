@@ -166,7 +166,7 @@ export default class Game {
 		// console.log(angle, index);
 		this.updateCurrentMove(index, true);
 		this.firstMove = index;
-		if (this.firstMove != this.gamerId) {
+		if (this.firstMove != this.gamerId && this.gameMode == "epic") {
 			this.resetCamera("2d");
 		}
 
