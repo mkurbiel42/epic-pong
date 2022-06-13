@@ -3,7 +3,7 @@ const { Server } = require("socket.io");
 const { createServer } = require("http");
 let cors = require("cors");
 var app = express();
-const PORT = 2137;
+const PORT = process.env.PORT || 2137;
 var path = require("path");
 
 /////////////////
