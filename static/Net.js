@@ -101,13 +101,13 @@ export const init = () => {
 		} else {
 			window.game.redScore += 1;
 		}
-		if (window.game.blueScore == 1) {
+		if (window.game.blueScore == 3) {
 			if (window.game.gamerId == 1) {
 				victory("w so big i can see it with no glasses");
 			} else {
 				loss("you lost L bozo");
 			} //iom blu dadabibdadbabiadi dabadidabaai DABadbdbiadbiaD!
-		} else if (window.game.redScore === 1) {
+		} else if (window.game.redScore === 3) {
 			if (window.game.gamerId == 1) {
 				loss("you lost L bozo");
 			} else {
