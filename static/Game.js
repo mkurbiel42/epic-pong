@@ -4,14 +4,29 @@ import Floor from "./Floor.js";
 import Plank from "./Plank.js";
 import Line from "./Line.js";
 import { FLAT_SURFACES_THICKNESS, SAFEAREA_MULTIPLIER } from "./Consts.js";
-import { ඞ, paletkaMove, syncBall, syncAngle } from "./Net.js";
+import {
+	ඞ,
+	paletkaMove,
+	syncBall,
+	syncAngle,
+	syncGameStart,
+	syncCurrentMove,
+	syncSpeed,
+	createRandomAngle,
+	syncIsFirstMove,
+	allowOpponentsPlankMovement,
+	editPlankWidth,
+	updateMoveCounter
+} from "./Net.js";
 
 export default class Game {
 	constructor() {
-		this.gamerId = 0;
+		this.gamerId = 0.65;
 		// domyślne zmienne
 		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
+		this.blueScore = 0;
+		this.redScore = 0;
 		this.gameMode = "classic";
 		this.isFirstMove = true;
 		this.firstMove = 0;
@@ -23,16 +38,8 @@ export default class Game {
 			this.FIELD_SIZE.z / 6.9,
 			this.FIELD_SIZE.z / 7.312,
 			this.FIELD_SIZE.z / 9.11,
-			this.FIELD_SIZE.z / 13.37,
+			this.FIELD_SIZE.z / 13.37
 		];
-		// this.paletkiSize = [
-		// 	this.FIELD_SIZE.z / 12.5,
-		// 	this.FIELD_SIZE.z / 2.5,
-		// 	this.FIELD_SIZE.z / 3,
-		// 	this.FIELD_SIZE.z / 3.5,
-		// 	this.FIELD_SIZE.z / 9.11,
-		// 	this.FIELD_SIZE.z / 13.37
-		// ];
 		this.maxMoves = this.paletkiSize.length - 1;
 
 		this.aspect = window.innerWidth / window.innerHeight;
@@ -42,17 +49,17 @@ export default class Game {
 
 		//this.camera2d = new THREE.OrthographicCamera(-1920, 1920, 1080, -1080, 1, 10000);
 		this.camera2d = new THREE.OrthographicCamera(
-			(this.FIELD_SIZE.x * -1 - 200) * this.aspect,
-			(this.FIELD_SIZE.x * 1 + 200) * this.aspect,
-			this.FIELD_SIZE.x * 1 + 200,
-			this.FIELD_SIZE.x * -1 - 200,
+			this.FIELD_SIZE.z * -1 - 200,
+			this.FIELD_SIZE.z * 1 + 200,
+			this.FIELD_SIZE.x * 1 + 200 / this.aspect,
+			this.FIELD_SIZE.x * -1 - 200 / this.aspect,
 			1,
 			10000
 		);
 
 		this.cam3dMode();
 
-		this.resetCamera(false, "3d");
+		this.resetCamera("3d");
 
 		// dodanie pomocniczych osi (usunąć później!)
 		// this.axes = new THREE.AxesHelper(1000);
@@ -88,10 +95,22 @@ export default class Game {
 	};
 
 	initGame = () => {
-		console.log(this.gamerId);
+		this.blueScore = 0;
+		this.redScore = 0;
+		window.ui.updateScores(this.blueScore, this.redScore);
 		this.addBall();
 		this.addPlanks();
 		this.startGame();
+		this.started = true;
+	};
+
+	destroyGame = () => {
+		this.scene.remove(this.ballObject);
+		this.scene.remove(this.plank1);
+		this.scene.remove(this.plank2);
+		setTimeout(() => {
+			this.started = false;
+		}, 1500);
 	};
 
 	startGame = () => {
@@ -99,6 +118,8 @@ export default class Game {
 		this.startingPlayer = 0;
 		let animationTime = 1000;
 		let delayTime = 1200;
+
+		this.resetCamera();
 
 		new TWEEN.Tween(this.ballObject.position)
 			.to(this.ballObject.defaultPos, animationTime)
@@ -109,24 +130,29 @@ export default class Game {
 		this.setPlanksToDefaultPoses();
 		setTimeout(() => {
 			// domyślny kąt toczenia się piłki i prędkość
-			this.getRandomAngle();
+			if (this.gamerId === 1) createRandomAngle();
 			this.defaultSpeed = 17.5;
 			this.speed = this.defaultSpeed;
 			this.plankSpeed = 12;
 			this.gameStarted = true;
 			this.gameStopped = false;
+			if (this.gameMode == "epic") {
+				this.isFirstMove = true;
+				syncIsFirstMove();
+			}
 		}, animationTime + delayTime);
 	};
 
-	resetCamera = (withAnimaton = false, mode = "3d") => {
-		let cameraPos = !this.isFirstMove ? { x: 0, y: 1800, z: 0 } : { x: 0, y: 400, z: 2400 };
+	resetCamera = (mode = "3d") => {
+		let cameraPos =
+			mode == "2d" ? { x: 0, y: 1800, z: 0 } : { x: 0, y: 400, z: 2400 * this.gamerId };
 		let delay = !this.isFirstMove ? 1300 : 0;
 		let rotation = !this.isFirstMove ? Math.PI / 2 : 0;
 		let camPos = this.camera.position;
 
 		if (mode == "3d") {
 			this.cam3dMode();
-			this.camera.position.set(camPos.x, camPos.y, camPos.z);
+			this.camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
 			this.camera.lookAt(this.scene.position);
 		} else {
 			this.cam2dMode();
@@ -134,41 +160,15 @@ export default class Game {
 			this.camera.lookAt(this.scene.position);
 			this.camera.rotation.z = Math.PI / 2;
 		}
-
-		if (withAnimaton) {
-			//ustawienie kamery dla gracza 1
-			if (this.camera === this.camera3d) {
-				new TWEEN.Tween(this.camera.position)
-					.to(cameraPos, 800)
-					.delay(delay)
-					.easing(TWEEN.Easing.Linear.None)
-					.start();
-				setTimeout(() => {
-					this.camera.lookAt(this.scene.position);
-					this.camera.rotation.z = rotation;
-					this.camera.updateProjectionMatrix();
-				}, 1000 + delay);
-			}
-		} else {
-			this.camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-			this.camera.lookAt(this.scene.position);
-			this.camera.updateProjectionMatrix();
-		}
 	};
 
-	getRandomAngle = () => {
-		do {
-			this.angle = Math.random() * 2 * Math.PI - Math.PI;
-		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 9);
-		if (Math.abs(this.angle) > Math.PI / 2) {
-			this.updateCurrentMove(-1, true);
-			this.firstMove = -1;
-		} else {
-			this.updateCurrentMove(1, true);
-			this.firstMove = 1;
+	getRandomAngle = (angle, index) => {
+		// console.log(angle, index);
+		this.updateCurrentMove(index, true);
+		this.firstMove = index;
+		if (this.firstMove != this.gamerId) {
+			this.resetCamera("2d");
 		}
-
-		syncAngle(this.angle);
 
 		// please don't svelte
 		//		please don't svelte
@@ -188,16 +188,22 @@ export default class Game {
 		if (this.gameMode === "epic") {
 			if (this.currentMove == this.firstMove && !dont) {
 				this.moveCounter += 1;
-				console.log(this.moveCounter);
+				updateMoveCounter(this.moveCounter);
 			}
 
+			// console.log(this.moveCounter);
 			this.currentlyMovingPlank.editWidth(
 				this.moveCounter <= this.maxMoves
 					? this.paletkiSize[this.moveCounter]
 					: this.paletkiSize[this.maxMoves]
 			);
+			editPlankWidth(this.currentlyMovingPlank.width);
+
+			this.allowPlankMovement = false;
+			allowOpponentsPlankMovement(true);
 		}
 		this.currentMove = value;
+		syncCurrentMove(value);
 
 		// if (value == -1) {
 		// 	this.currentlyMovingPlank = this.plank2;
@@ -208,13 +214,14 @@ export default class Game {
 		// }
 
 		if (this.gameMode !== "epic") {
-			this.speed *= 1.05;
+			this.speed *= 1.06;
 		}
 
-		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "epic") {
+		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "epic" && !dont) {
 			if (this.isFirstMove) {
 				this.isFirstMove = false;
-				this.resetCamera(true, "2d");
+				syncIsFirstMove();
+				this.resetCamera("2d");
 			}
 			let ballStoppingTime = 1600;
 			new TWEEN.Tween(this)
@@ -224,24 +231,25 @@ export default class Game {
 
 			setTimeout(() => {
 				this.gameStarted = false;
-				this.allowPlankMovement = true;
+				allowOpponentsPlankMovement(true);
 				setTimeout(() => {
 					this.speed = this.defaultSpeed;
-					this.allowPlankMovement = false;
+					this.allowPlankMovement = true;
+					allowOpponentsPlankMovement(false);
 					this.gameStarted = true;
 				}, 5000);
 			}, ballStoppingTime);
+			this.plank1.movingLeft = false;
+			this.plank1.movingRight = false;
+			this.plank2.movingLeft = false;
+			this.plank2.movingRight = false;
 		}
-
-		this.plank1.movingLeft = false;
-		this.plank1.movingRight = false;
-		this.plank2.movingLeft = false;
-		this.plank2.movingRight = false;
 	};
 
 	addBall = () => {
 		// utworzenie piłki
 		this.isFirstMove = true;
+		syncIsFirstMove();
 		this.ballObject = new Ball();
 		// ball ///da //todo: stok uli
 		this.ballObject.position.set(0, 400, 0);
@@ -265,7 +273,7 @@ export default class Game {
 	addBoundaries = () => {
 		let poses = [
 			{ x: this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
-			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
+			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 }
 		];
 		poses.forEach((pose) => {
 			let boundary = new Boundary(
@@ -280,7 +288,7 @@ export default class Game {
 
 	addPlanks = () => {
 		this.defaultPaletkaWidth =
-			this.gameMode === "epic" ? this.paletkiSize[0] : this.paletkiSize[this.maxMoves - 1];
+			this.gameMode === "epic" ? this.paletkiSize[0] : this.paletkiSize[this.maxMoves];
 
 		this.plank1 = new Plank(this.defaultPaletkaWidth, this.FIELD_SIZE.z);
 		this.plank1.name = "plank1";
@@ -335,122 +343,133 @@ export default class Game {
 
 	addLines = () => {
 		this.linesObject = new THREE.Object3D();
-		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, 0));
-		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, this.FIELD_SIZE.z));
-		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, -this.FIELD_SIZE.z));
+		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, 0, 0xefefef));
+		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, this.FIELD_SIZE.z, 0x0000ee));
+		this.linesObject.add(new Line(this.FIELD_SIZE.x * 2, 0, -this.FIELD_SIZE.z, 0xee0000));
 
 		this.scene.add(this.linesObject);
 	};
 
 	moveBall = () => {
-		console.log(this.gamerId, this.ballObject.position.z);
 		if (
-			(this.gamerId == -1 && this.ballObject.position.z > 0) ||
-			(this.gamerId == 1 && this.ballObject.position.z <= 0)
-		)
+			(this.gamerId == -1 && this.ballObject.position.z >= 200) ||
+			(this.gamerId == 1 && this.ballObject.position.z < 200)
+		) {
 			return;
-
+		}
+		// console.log(this.gamerId, this.ballObject.position.z);
 		// porusz piłkę o podany wektor prędkości
 		this.ballObject.position.x += Math.sin(this.angle) * this.speed /** 3*/;
 		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
 
-		syncBall(this.ballObject.position);
-
-		// this.camera.position.x += Math.sin(this.angle) * this.speed /** 3*/;
-		// this.camera.position.z += Math.cos(this.angle) * this.speed;
-		// this.camera.lookAt(this.ballObject.position);
-		// this.camera.updateProjectionMatrix();
-
 		// obróć piłkę wokół własnej osi
-		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
+		this.ballObject.ball.rotation.x +=
+			this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
 		if (
-			//sprawdź czy piłka nie odbija się od ściany
+			//sprawdź czy piłka odbija się od ściany
 			Math.abs(this.ballObject.position.x) >= this.FIELD_SIZE.x - this.ballObject.size &&
 			//sprawdź czy piłka nie spada po punkcie
 			this.ballObject.position.y > 0
 		) {
 			this.angle *= -1;
-			this.syncAngle(this.angle);
-			this.ballObject.rotation.y = this.angle;
+			syncAngle(this.angle);
 		}
 
 		if (
 			Math.abs(this.ballObject.position.z) >=
 			this.FIELD_SIZE.z - this.ballObject.size - FLAT_SURFACES_THICKNESS / 2
 		) {
+			let hitboxP1 = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+			let hitboxP2 = new THREE.Box3(new THREE.Vector3(), new THREE.Vector3());
+			let hitboxB = new THREE.Sphere(this.ballObject.position, this.ballObject.size * 1.25);
+			hitboxP1.setFromObject(this.plank1);
+			hitboxP2.setFromObject(this.plank2);
 			//sprawdzenie czy cała piłka przekracza linię deski
+
 			if (
+				hitboxB.intersectsBox(hitboxP1) ||
+				hitboxB.intersectsBox(hitboxP2)
+
 				//hitbox dla pierwszej deski
-				(this.ballObject.position.x >=
-					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
-					this.ballObject.position.x <=
-						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z + this.ballObject.size - this.FIELD_SIZE.z) <=
-						this.ballObject.size) ||
-				//hitbox dla drugiej deski
-				(this.ballObject.position.x >=
-					this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
-					this.ballObject.position.x <=
-						this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
-					Math.abs(this.ballObject.position.z + this.ballObject.size + this.FIELD_SIZE.z) <=
-						this.ballObject.size)
+				// (this.ballObject.position.x >=
+				// 	this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
+				// 	this.ballObject.position.x <=
+				// 		this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
+				// 	Math.abs(
+				// 		this.ballObject.position.z + this.ballObject.size - this.FIELD_SIZE.z
+				// 	) <= this.ballObject.size) ||
+				// //hitbox dla drugiej deski
+				// (this.ballObject.position.x >=
+				// 	this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
+				// 	this.ballObject.position.x <=
+				// 		this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
+				// 	Math.abs(
+				// 		this.ballObject.position.z + this.ballObject.size + this.FIELD_SIZE.z
+				// 	) <= this.ballObject.size)
 			) {
-				//odbicie piłki od deski
-				if (this.ballObject.position.z > 0 && this.currentMove == 1) {
+				// console.log(this.ballObject.position, hitboxB);
+				if (
+					(this.ballObject.position.z > 0 && this.currentMove == 1) ||
+					(this.ballObject.position.z < 0 && this.currentMove == -1)
+				) {
 					this.angle =
 						Math.PI -
 						this.angle -
-						(3 / 2) *
+						this.gamerId *
+							(3 / 2) *
 							Math.asin(
-								(this.ballObject.position.x - this.plank1.position.x) /
-									(this.plank1.width + this.ballObject.size * 2)
-							);
-					this.syncAngle(this.angle);
-					this.updateCurrentMove(-1);
-				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
-					console.log();
-					this.angle =
-						Math.PI -
-						this.angle +
-						(3 / 2) *
-							Math.asin(
-								(this.ballObject.position.x - this.plank2.position.x) /
-									(this.plank2.width + this.ballObject.size * 2)
+								(this.ballObject.position.x -
+									this.currentlyMovingPlank.position.x) /
+									(this.currentlyMovingPlank.width + this.ballObject.size * 2)
 							);
 					syncAngle(this.angle);
-					this.updateCurrentMove(1);
+					syncSpeed(this.speed);
+					this.updateCurrentMove(this.currentMove * -1);
 				}
 			} else {
-				if (Math.abs(this.ballObject.position.z) > this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER) {
+				if (
+					Math.abs(this.ballObject.position.z) >
+					this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER
+				) {
 					this.ballObject.position.y -= this.speed / 2;
 					if (!this.gameStopped) {
-						console.log("Punkt!");
+						this.ballObject.position.z > 0 ? ඞ.emit("point", -1) : ඞ.emit("point", 1);
 						this.gameStopped = true;
 						setTimeout(() => {
 							this.isFirstMove = true;
+							syncIsFirstMove();
+
 							setTimeout(() => {
 								this.speed = this.defaultSpeed;
 								this.plank1.editWidth(this.defaultPaletkaWidth);
 								this.plank2.editWidth(this.defaultPaletkaWidth);
 								this.ballObject.position.set(0, 400, 0);
+								syncBall(this.ballObject.position, this.ballObject.rotation);
 								this.gameStopped = false;
 								this.gameStarted = false;
-								this.resetCamera(false, "3d");
+								this.resetCamera("3d");
 								this.startGame();
+								syncGameStart();
 							}, 550);
 						}, 2000);
 					}
 				}
 			}
 		}
+		syncBall(this.ballObject.position, this.ballObject.rotation);
 	};
 
 	movePlankAccordingly = () => {
 		if (!this.currentlyMovingPlank) return;
-		if (!this.allowPlankMovement || this.gameStopped) return;
+		if (
+			!this.allowPlankMovement ||
+			this.gameStopped ||
+			(this.currentMove != this.gamerId && this.gameMode == "epic")
+		)
+			return;
 
-		let multiplier = this.currentMove;
+		let multiplier = this.gamerId;
 
 		if (
 			// sprawdź czy deska nie uderzyła w prawą ścianę
@@ -488,16 +507,33 @@ export default class Game {
 		movedPaletka.position.set(newPos.x, newPos.y, newPos.z);
 	};
 
-	ballMove = (newPos) => {
+	ballMove = (newPos, newRotation) => {
+		// if (newPos === this.ballObject.position) console.log(newPos);
 		this.ballObject.position.set(newPos.x, newPos.y, newPos.z);
+		// this.ballObject.rotation.set(newRotation.x, newRotation.y, newRotation.z);
+		//console.log(newRotation);
 	};
 
 	changeAngle = (newAngle) => {
 		this.angle = newAngle;
 	};
 
+	changeCurrentMove = (value) => {
+		this.currentMove = value;
+	};
+
+	changeSpeed = (speed) => {
+		this.speed = speed;
+	};
+
+	editOpponentsPlankWidth = (width) => {
+		let edittedPlank = this.gamerId == 1 ? this.plank2 : this.plank1;
+		edittedPlank.editWidth(width);
+	};
+
 	cam3dMode = () => {
 		this.camera = this.camera3d;
+		this.camera.aspect = this.aspect;
 	};
 
 	cam2dMode = () => {
@@ -509,10 +545,10 @@ export default class Game {
 		if (this.camera === this.camera3d) {
 			this.camera.aspect = this.aspect;
 		} else {
-			this.camera.left = (this.FIELD_SIZE.x * -1 - 200) * this.aspect;
-			this.camera.right = (this.FIELD_SIZE.x * 1 + 200) * this.aspect;
-			this.camera.top = this.FIELD_SIZE.x * 1 + 200;
-			this.camera.bottom = this.FIELD_SIZE.x * -1 - 200;
+			this.camera.left = this.FIELD_SIZE.z * -1 - 200;
+			this.camera.right = this.FIELD_SIZE.z * 1 + 200;
+			this.camera.top = this.FIELD_SIZE.x * 1 + 200 / this.aspect;
+			this.camera.bottom = this.FIELD_SIZE.x * -1 - 200 / this.aspect;
 		}
 		this.camera.updateProjectionMatrix();
 		this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -520,11 +556,13 @@ export default class Game {
 
 	render = () => {
 		//console.log(new Date());
-		this.movePlankAccordingly();
-		if (this.gameStarted) {
-			this.moveBall();
+		if (this.started) {
+			this.movePlankAccordingly();
+			if (this.gameStarted) {
+				this.moveBall();
+			}
+			TWEEN.update();
 		}
-		TWEEN.update();
 		requestAnimationFrame(this.render);
 		this.renderer.render(this.scene, this.camera);
 	};

@@ -204,3 +204,17 @@ input:focus-within {
 .pb-45 {
 	padding-bottom: 0.45em;
 }
+
+.scorebox {
+	display: flex;
+	flex-direction: row;
+	background-color: rgb(0, 0, 0, 0.8);
+}
+
+.bluescore {
+	color: cornflowerblue;
+}
+
+.redscore {
+	color: orangered;
+}

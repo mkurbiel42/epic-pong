@@ -31,7 +31,7 @@ const Datastore = require("nedb");
 
 const dataCache = new Datastore({
 	filename: "dataCache.db",
-	autoload: true,
+	autoload: true
 });
 
 //svelte my beloved
@@ -41,10 +41,10 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
-		methods: ["GET", "POST"],
+		methods: ["GET", "POST"]
 		// allowedHeaders: ["cock"],
 		//credentials: true
-	},
+	}
 });
 
 const getUsersList = (callback) => {
@@ -91,18 +91,40 @@ io.on("connection", (socket) => {
 				socket.data.username = user;
 				socket.join(room);
 				socket.emit("userLoggedIn", user);
-				dataCache.insert({ dataType: "player", userName: user, roomName: room }, (err, newDoc) => {
-					getUsersList((data) => {
-						io.to(room).emit(
-							"usersList",
-							data.map((elem) => elem.userName)
-						);
-					});
-				});
+				dataCache.insert(
+					{ dataType: "player", userName: user, roomName: room },
+					(err, newDoc) => {
+						getUsersList((data) => {
+							io.to(room).emit(
+								"usersList",
+								data.map((elem) => elem.userName)
+							);
+						});
+					}
+				);
 			} else {
 				socket.emit("error", "Podana nazwa jest obecnie zajęta.");
 			}
 		});
+	});
+
+	socket.on("joinLobby", () => {
+		let rooms = Array.from(socket.rooms).filter((room) => room != socket.id);
+		for (const room of rooms) {
+			socket.leave(room);
+		}
+
+		getUsersList((data) => {
+			socket.emit(
+				"usersList",
+				data.map((elem) => elem.userName)
+			);
+		}, "_lobby");
+	});
+	socket.on("point", (forPlayer) => {
+		console.log(forPlayer);
+		socket.emit("pointScored", forPlayer);
+		socket.broadcast.emit("pointScored", forPlayer);
 	});
 
 	socket.on("joinRandom", async () => {
@@ -115,7 +137,7 @@ io.on("connection", (socket) => {
 				socket.join(currentRoom.roomName);
 				socket.leave("_lobby");
 
-				io.to(currentRoom.roomName).emit("startGame", epicnessSwitch);
+				io.to(currentRoom.roomName).emit("startGame", currentRoom.epicnessSwitch);
 				dataCache.update(
 					{ dataType: "room", roomName: currentRoom.roomName },
 					{ $set: { players: 2 } },
@@ -145,7 +167,7 @@ io.on("connection", (socket) => {
 						dataType: "room",
 						roomName: roomName,
 						epicnessSwitch: epicnessSwitch,
-						players: 1,
+						players: 1
 					},
 					(err, newDoc) => {
 						//console.log(roomName);
@@ -188,7 +210,7 @@ io.on("connection", (socket) => {
 						{ $set: { roomName: roomName } },
 						{},
 						(err) => {
-							console.log("update poszedł");
+							// console.log("update poszedł");
 							if (err) console.log(err);
 						}
 					);
@@ -205,7 +227,7 @@ io.on("connection", (socket) => {
 						dataType: "room",
 						roomName: roomName,
 						epicnessSwitch: epicnessSwitch,
-						players: 1,
+						players: 1
 					},
 					(err, newDoc) => {
 						//console.log(roomName);
@@ -227,19 +249,19 @@ io.on("connection", (socket) => {
 
 	socket.on("disconnecting", () => {
 		if (socket.data.username) {
-			dataCache.remove({ dataType: "player", userName: socket.data.username }, () => {
-				if (socket.rooms > 1) {
-					let bruh = socket.rooms.filter((room) => {
+			let rooms = Array.from(socket.rooms);
+			dataCache.remove({ dataType: "player", userName: socket.data.username }, (err, n) => {
+				if (rooms.length > 1) {
+					let bruh = rooms.filter((room) => {
 						return room != "_lobby" && room != socket.id;
 					});
 					if (bruh.length > 0) {
 						dataCache.findOne({ dataType: "room", roomName: bruh[0] }, (err, doc) => {
-							//console.log(doc);
 							if (doc) {
 								if (doc.players == 1) {
 									dataCache.remove({ dataType: "room", roomName: doc.roomName });
 								} else {
-									io.to(doc.roomName).emit("victory royale", "user left"); //yeah fortnite we bout tiog ett down get down ten kills on the board right now just wiped out tomato town
+									io.to(doc.roomName).emit("victory royale", "User left"); //yeah fortnite we bout tiog ett down get down ten kills on the board right now just wiped out tomato town
 									dataCache.remove({ dataType: "room", roomName: doc.roomName });
 								}
 							}
@@ -261,15 +283,55 @@ io.on("connection", (socket) => {
 		socket.broadcast.emit("paletkaMoved", gamerId, newPos);
 	});
 
-	socket.on("ball", (roomname, newPos) => {
-		socket.broadcast.emit("ballMoved", newPos);
+	socket.on("ball", (newPos, newRotation) => {
+		socket.broadcast.emit("ballMoved", newPos, newRotation);
 	});
 
 	socket.on("angle", (roomname, newAngle) => {
 		socket.broadcast.emit("angleChanged", newAngle);
 	});
+
+	socket.on("gameStart", () => {
+		socket.broadcast.emit("gameStart");
+	});
+
+	socket.on("randomAngle", () => {
+		let angle = 0;
+		do {
+			angle = Math.random() * 2 * Math.PI - Math.PI;
+		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 9);
+		let index = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
+		socket.emit("randomAngle", angle, index);
+		socket.broadcast.emit("randomAngle", angle, index);
+	});
+
+	socket.on("currentMove", (value) => {
+		socket.broadcast.emit("currentMoveChange", value);
+	});
+
+	socket.on("speed", (speed) => {
+		socket.broadcast.emit("speedChange", speed);
+	});
+
+	socket.on("isFirstMove", (value) => {
+		socket.broadcast.emit("isFirstMoveChange", value);
+	});
+
+	socket.on("allowOpponentsPlankMovement", (value) => {
+		socket.broadcast.emit("allowPlankMovement", value);
+	});
+
+	socket.on("editPlankWidth", (value) => {
+		socket.broadcast.emit("plankWidth", value);
+	});
+
+	socket.on("moveCounter", (value) => {
+		// console.log("moveCounter", value);
+		socket.broadcast.emit("moveCounter", value);
+	});
 });
 
+//if you delte cod brek
 app.post("/reset", (req, res) => {
 	loggedUsers = [];
 	res.send(

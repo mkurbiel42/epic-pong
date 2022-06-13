@@ -4,7 +4,8 @@ import { createElement as c, editElement as e, removeElements as r } from "./lib
 export default class UI {
 	constructor() {
 		this.username = "";
-
+		this.scoreBox = c("div", { className: "box scorebox" });
+		this.updateScores(0, 0);
 		this.root = document.getElementById("root");
 
 		this.uiBox = c(
@@ -18,7 +19,7 @@ export default class UI {
 				(this.usernameInput = c("input", {
 					placeholder: "Enter nickname",
 					id: "usernameInput",
-					maxLength: 10,
+					maxLength: 10
 				})),
 				(this.loginButton = c("button", {}, "LOGIN"))
 			)),
@@ -91,7 +92,7 @@ export default class UI {
 						(this.roomLabel = c("p", { className: "label-sm pb-45" }, "Room name:")),
 						(this.roomNameInput = c("input", {
 							className: "txt-al-left",
-							maxLength: 10,
+							maxLength: 10
 						}))
 					),
 					c(
@@ -99,9 +100,10 @@ export default class UI {
 						{ className: "section" },
 						(this.epicnessSwitch = c("input", {
 							type: "checkbox",
+							checked: true,
 							onchange: () => {
 								console.log(this.epicnessSwitch.checked);
-							},
+							}
 						}))
 					),
 					c(
@@ -116,7 +118,7 @@ export default class UI {
 										this.roomNameInput.value,
 										this.epicnessSwitch.checked // (tociej moment) ? true : false
 									);
-								},
+								}
 							},
 							"Join/Create"
 						)),
@@ -125,7 +127,7 @@ export default class UI {
 							{
 								onclick: () => {
 									Net.joinRandom();
-								},
+								}
 							},
 							"Join random"
 						))
@@ -152,5 +154,16 @@ export default class UI {
 	destroyInGameUI = () => {
 		r(this.inGameUI);
 		this.clearBG();
+		this.uiBox.appendChild(this.scoreBox); // nya
+	};
+
+	updateScores = (blueScore, redScore) => {
+		console.log(blueScore, redScore);
+		e(
+			this.scoreBox,
+			c("span", { className: "bluescore" }, blueScore),
+			c("span", {}, "-"),
+			c("span", { className: "redscore" }, redScore)
+		);
 	};
 }
