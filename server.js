@@ -31,7 +31,7 @@ const Datastore = require("nedb");
 
 const dataCache = new Datastore({
 	filename: "dataCache.db",
-	autoload: true
+	autoload: true,
 });
 
 //svelte my beloved
@@ -41,10 +41,10 @@ const httpServer = createServer(app);
 const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
-		methods: ["GET", "POST"]
+		methods: ["GET", "POST"],
 		// allowedHeaders: ["cock"],
 		//credentials: true
-	}
+	},
 });
 
 const getUsersList = (callback) => {
@@ -91,17 +91,14 @@ io.on("connection", (socket) => {
 				socket.data.username = user;
 				socket.join(room);
 				socket.emit("userLoggedIn", user);
-				dataCache.insert(
-					{ dataType: "player", userName: user, roomName: room },
-					(err, newDoc) => {
-						getUsersList((data) => {
-							io.to(room).emit(
-								"usersList",
-								data.map((elem) => elem.userName)
-							);
-						});
-					}
-				);
+				dataCache.insert({ dataType: "player", userName: user, roomName: room }, (err, newDoc) => {
+					getUsersList((data) => {
+						io.to(room).emit(
+							"usersList",
+							data.map((elem) => elem.userName)
+						);
+					});
+				});
 			} else {
 				socket.emit("error", "Podana nazwa jest obecnie zajęta.");
 			}
@@ -113,8 +110,12 @@ io.on("connection", (socket) => {
 			docs = docs.filter((doc) => doc.players == 1);
 			if (docs.length > 0) {
 				let currentRoom = docs[Math.floor(Math.random() * (docs.length - 1))];
-				console.log(currentRoom);
+				//console.log(currentRoom);
+				socket.emit("roomJoined", currentRoom.roomName, -1);
+				socket.join(currentRoom.roomName);
+				socket.leave("_lobby");
 
+				io.to(currentRoom.roomName).emit("startGame", epicnessSwitch);
 				dataCache.update(
 					{ dataType: "room", roomName: currentRoom.roomName },
 					{ $set: { players: 2 } },
@@ -128,31 +129,33 @@ io.on("connection", (socket) => {
 					{ $set: { roomName: currentRoom.roomName } },
 					{},
 					(err) => {
-						console.log("update poszedł");
+						//console.log("update poszedł");
 						if (err) console.log(err);
 					}
 				);
 			} else {
 				let roomName = [...Array(10)].map(() => Math.random().toString(36)[2]).join("");
 				let epicnessSwitch = Math.random() < 0.5;
-
-				console.log(roomName, epicnessSwitch);
+				socket.emit("roomJoined", roomName, 1);
+				socket.leave("_lobby");
+				socket.join(roomName);
+				//console.log(roomName, epicnessSwitch);
 				dataCache.insert(
 					{
 						dataType: "room",
 						roomName: roomName,
 						epicnessSwitch: epicnessSwitch,
-						players: 1
+						players: 1,
 					},
 					(err, newDoc) => {
-						console.log(roomName);
-						console.log(socket.data);
+						//console.log(roomName);
+						//console.log(socket.data);
 						dataCache.update(
 							{ dataType: "player", userName: socket.data.username },
 							{ $set: { roomName: roomName } },
 							{},
 							(err) => {
-								console.log("update poszedł");
+								//console.log("update poszedł");
 								if (err) console.log(err);
 							}
 						);
@@ -169,6 +172,9 @@ io.on("connection", (socket) => {
 					//-5XD
 					console.log("[object Object]");
 					socket.join(roomName);
+					socket.leave("_lobby");
+					socket.emit("roomJoined", roomName, -1);
+					io.to(roomName).emit("startGame", doc.epicnessSwitch);
 					dataCache.update(
 						{ dataType: "room", roomName: roomName },
 						{ $set: { players: 2 } },
@@ -192,23 +198,24 @@ io.on("connection", (socket) => {
 			} else {
 				socket.join(roomName);
 
-				socket.emit("roomCreated", roomName);
+				socket.emit("roomJoined", roomName, 1);
+				socket.leave("_lobby");
 				dataCache.insert(
 					{
 						dataType: "room",
 						roomName: roomName,
 						epicnessSwitch: epicnessSwitch,
-						players: 1
+						players: 1,
 					},
 					(err, newDoc) => {
-						console.log(roomName);
-						console.log(socket.data);
+						//console.log(roomName);
+						//console.log(socket.data);
 						dataCache.update(
 							{ dataType: "player", userName: socket.data.username },
 							{ $set: { roomName: roomName } },
 							{},
 							(err) => {
-								console.log("update poszedł");
+								//console.log("update poszedł");
 								if (err) console.log(err);
 							}
 						);
@@ -227,7 +234,7 @@ io.on("connection", (socket) => {
 					});
 					if (bruh.length > 0) {
 						dataCache.findOne({ dataType: "room", roomName: bruh[0] }, (err, doc) => {
-							console.log(doc);
+							//console.log(doc);
 							if (doc) {
 								if (doc.players == 1) {
 									dataCache.remove({ dataType: "room", roomName: doc.roomName });
@@ -248,6 +255,18 @@ io.on("connection", (socket) => {
 				});
 			});
 		}
+	});
+
+	socket.on("paletka", (roomname, gamerId, newPos) => {
+		socket.broadcast.emit("paletkaMoved", gamerId, newPos);
+	});
+
+	socket.on("ball", (roomname, newPos) => {
+		socket.broadcast.emit("ballMoved", newPos);
+	});
+
+	socket.on("angle", (roomname, newAngle) => {
+		socket.broadcast.emit("angleChanged", newAngle);
 	});
 });
 
