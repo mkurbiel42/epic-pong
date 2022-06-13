@@ -18,7 +18,7 @@ export default class UI {
 				(this.usernameInput = c("input", {
 					placeholder: "Enter nickname",
 					id: "usernameInput",
-					maxLength: 10
+					maxLength: 10,
 				})),
 				(this.loginButton = c("button", {}, "LOGIN"))
 			)),
@@ -91,13 +91,18 @@ export default class UI {
 						(this.roomLabel = c("p", { className: "label-sm pb-45" }, "Room name:")),
 						(this.roomNameInput = c("input", {
 							className: "txt-al-left",
-							maxLength: 10
+							maxLength: 10,
 						}))
 					),
 					c(
 						"div",
 						{ className: "section" },
-						(this.epicnessSwitch = c("input", { type: "checkbox" }))
+						(this.epicnessSwitch = c("input", {
+							type: "checkbox",
+							onchange: () => {
+								console.log(this.epicnessSwitch.checked);
+							},
+						}))
 					),
 					c(
 						"div",
@@ -111,25 +116,41 @@ export default class UI {
 										this.roomNameInput.value,
 										this.epicnessSwitch.checked // (tociej moment) ? true : false
 									);
-								}
+								},
 							},
-							"Create"
+							"Join/Create"
 						)),
-						(this.joinRoomButton = c("button", { className: "btn-secondary" }, "Join"))
-					),
-					(this.joinRandomButton = c(
-						"button",
-						{
-							className: "btn-big",
-							onclick: () => {
-								Net.joinRandom();
-							}
-						},
-						"Join random"
-					))
+						(this.joinRandomButton = c(
+							"button",
+							{
+								onclick: () => {
+									Net.joinRandom();
+								},
+							},
+							"Join random"
+						))
+					)
 				)),
 				this.activeUsersBox
 			))
 		);
+	};
+
+	viewInGameUI = (roomname, username, id) => {
+		r(this.mainMenuBox);
+		e(
+			this.uiBox,
+			this.flexBreak,
+			(this.inGameUI = c(
+				"div",
+				{ className: "box" },
+				`room: ${roomname}, user:${username}, color:${id == -1 ? "red" : "blue"}`
+			))
+		);
+	};
+
+	destroyInGameUI = () => {
+		r(this.inGameUI);
+		this.clearBG();
 	};
 }

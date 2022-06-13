@@ -4,10 +4,11 @@ import Floor from "./Floor.js";
 import Plank from "./Plank.js";
 import Line from "./Line.js";
 import { FLAT_SURFACES_THICKNESS, SAFEAREA_MULTIPLIER } from "./Consts.js";
-import { ඞ } from "./Net.js";
+import { ඞ, paletkaMove, syncBall, syncAngle } from "./Net.js";
 
 export default class Game {
 	constructor() {
+		this.gamerId = 0;
 		// domyślne zmienne
 		this.FIELD_SIZE = { x: 1125, z: 1800 }; //rozmiar pola gry
 
@@ -22,7 +23,7 @@ export default class Game {
 			this.FIELD_SIZE.z / 6.9,
 			this.FIELD_SIZE.z / 7.312,
 			this.FIELD_SIZE.z / 9.11,
-			this.FIELD_SIZE.z / 13.37
+			this.FIELD_SIZE.z / 13.37,
 		];
 		// this.paletkiSize = [
 		// 	this.FIELD_SIZE.z / 12.5,
@@ -87,6 +88,7 @@ export default class Game {
 	};
 
 	initGame = () => {
+		console.log(this.gamerId);
 		this.addBall();
 		this.addPlanks();
 		this.startGame();
@@ -166,6 +168,8 @@ export default class Game {
 			this.firstMove = 1;
 		}
 
+		syncAngle(this.angle);
+
 		// please don't svelte
 		//		please don't svelte
 		// 			please don't svelte
@@ -195,13 +199,13 @@ export default class Game {
 		}
 		this.currentMove = value;
 
-		if (value == -1) {
-			this.currentlyMovingPlank = this.plank2;
-		} else if (value == 1) {
-			this.currentlyMovingPlank = this.plank1;
-		} else {
-			this.currentlyMovingPlank = null;
-		}
+		// if (value == -1) {
+		// 	this.currentlyMovingPlank = this.plank2;
+		// } else if (value == 1) {
+		// 	this.currentlyMovingPlank = this.plank1;
+		// } else {
+		// 	this.currentlyMovingPlank = null;
+		// }
 
 		if (this.gameMode !== "epic") {
 			this.speed *= 1.05;
@@ -239,6 +243,7 @@ export default class Game {
 		// utworzenie piłki
 		this.isFirstMove = true;
 		this.ballObject = new Ball();
+		// ball ///da //todo: stok uli
 		this.ballObject.position.set(0, 400, 0);
 		this.scene.add(this.ballObject);
 	};
@@ -260,7 +265,7 @@ export default class Game {
 	addBoundaries = () => {
 		let poses = [
 			{ x: this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
-			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 }
+			{ x: -this.FIELD_SIZE.x, y: 15, z: 0, rotation: Math.PI / 2 },
 		];
 		poses.forEach((pose) => {
 			let boundary = new Boundary(
@@ -285,7 +290,7 @@ export default class Game {
 		this.plank2.name = "plank2";
 		this.scene.add(this.plank2);
 
-		this.currentlyMovingPlank = this.plank1;
+		this.currentlyMovingPlank = this.gamerId == 1 ? this.plank1 : this.plank2;
 
 		window.addEventListener("keydown", (e) => {
 			switch (e.key) {
@@ -338,9 +343,18 @@ export default class Game {
 	};
 
 	moveBall = () => {
+		console.log(this.gamerId, this.ballObject.position.z);
+		if (
+			(this.gamerId == -1 && this.ballObject.position.z > 0) ||
+			(this.gamerId == 1 && this.ballObject.position.z <= 0)
+		)
+			return;
+
 		// porusz piłkę o podany wektor prędkości
 		this.ballObject.position.x += Math.sin(this.angle) * this.speed /** 3*/;
 		this.ballObject.position.z += Math.cos(this.angle) * this.speed;
+
+		syncBall(this.ballObject.position);
 
 		// this.camera.position.x += Math.sin(this.angle) * this.speed /** 3*/;
 		// this.camera.position.z += Math.cos(this.angle) * this.speed;
@@ -348,8 +362,7 @@ export default class Game {
 		// this.camera.updateProjectionMatrix();
 
 		// obróć piłkę wokół własnej osi
-		this.ballObject.ball.rotation.x +=
-			this.speed * (this.speed / (this.ballObject.size * Math.PI));
+		this.ballObject.ball.rotation.x += this.speed * (this.speed / (this.ballObject.size * Math.PI));
 
 		if (
 			//sprawdź czy piłka nie odbija się od ściany
@@ -358,6 +371,7 @@ export default class Game {
 			this.ballObject.position.y > 0
 		) {
 			this.angle *= -1;
+			this.syncAngle(this.angle);
 			this.ballObject.rotation.y = this.angle;
 		}
 
@@ -372,17 +386,15 @@ export default class Game {
 					this.plank1.position.x - this.plank1.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank1.position.x + this.plank1.width / 2 + this.ballObject.size &&
-					Math.abs(
-						this.ballObject.position.z + this.ballObject.size - this.FIELD_SIZE.z
-					) <= this.ballObject.size) ||
+					Math.abs(this.ballObject.position.z + this.ballObject.size - this.FIELD_SIZE.z) <=
+						this.ballObject.size) ||
 				//hitbox dla drugiej deski
 				(this.ballObject.position.x >=
 					this.plank2.position.x - this.plank2.width / 2 - this.ballObject.size &&
 					this.ballObject.position.x <=
 						this.plank2.position.x + this.plank2.width / 2 + this.ballObject.size &&
-					Math.abs(
-						this.ballObject.position.z + this.ballObject.size + this.FIELD_SIZE.z
-					) <= this.ballObject.size)
+					Math.abs(this.ballObject.position.z + this.ballObject.size + this.FIELD_SIZE.z) <=
+						this.ballObject.size)
 			) {
 				//odbicie piłki od deski
 				if (this.ballObject.position.z > 0 && this.currentMove == 1) {
@@ -394,6 +406,7 @@ export default class Game {
 								(this.ballObject.position.x - this.plank1.position.x) /
 									(this.plank1.width + this.ballObject.size * 2)
 							);
+					this.syncAngle(this.angle);
 					this.updateCurrentMove(-1);
 				} else if (this.ballObject.position.z < 0 && this.currentMove == -1) {
 					console.log();
@@ -405,13 +418,11 @@ export default class Game {
 								(this.ballObject.position.x - this.plank2.position.x) /
 									(this.plank2.width + this.ballObject.size * 2)
 							);
+					syncAngle(this.angle);
 					this.updateCurrentMove(1);
 				}
 			} else {
-				if (
-					Math.abs(this.ballObject.position.z) >
-					this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER
-				) {
+				if (Math.abs(this.ballObject.position.z) > this.FIELD_SIZE.z * SAFEAREA_MULTIPLIER) {
 					this.ballObject.position.y -= this.speed / 2;
 					if (!this.gameStopped) {
 						console.log("Punkt!");
@@ -451,6 +462,7 @@ export default class Game {
 			this.currentlyMovingPlank.movingRight
 		) {
 			this.currentlyMovingPlank.position.x += this.plankSpeed * 1.25 * multiplier;
+			paletkaMove(this.currentlyMovingPlank.position);
 			// this.camera.position.x += this.plankSpeed * multiplier;
 			// this.camera.updateProjectionMatrix();
 		}
@@ -465,9 +477,23 @@ export default class Game {
 			this.currentlyMovingPlank.movingLeft
 		) {
 			this.currentlyMovingPlank.position.x -= this.plankSpeed * 1.25 * multiplier;
+			paletkaMove(this.currentlyMovingPlank.position);
 			// this.camera.position.x -= this.plankSpeed * multiplier;
 			// this.camera.updateProjectionMatrix();
 		}
+	};
+
+	movePaletka = (id, newPos) => {
+		let movedPaletka = id == 1 ? this.plank1 : this.plank2;
+		movedPaletka.position.set(newPos.x, newPos.y, newPos.z);
+	};
+
+	ballMove = (newPos) => {
+		this.ballObject.position.set(newPos.x, newPos.y, newPos.z);
+	};
+
+	changeAngle = (newAngle) => {
+		this.angle = newAngle;
 	};
 
 	cam3dMode = () => {
