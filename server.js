@@ -42,7 +42,7 @@ const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
 		methods: ["GET", "POST"]
-	
+
 		//credentials: true
 	}
 });
@@ -126,7 +126,7 @@ io.on("connection", (socket) => {
 	socket.on("point", (forPlayer) => {
 		// console.log(forPlayer);
 		socket.emit("pointScored", forPlayer);
-		socket.broadcast.emit("pointScored", forPlayer);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("pointScored", forPlayer);
 	});
 
 	socket.on("joinRandom", async () => {
@@ -282,19 +282,19 @@ io.on("connection", (socket) => {
 	});
 
 	socket.on("paletka", (roomname, gamerId, newPos) => {
-		socket.broadcast.emit("paletkaMoved", gamerId, newPos);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("paletkaMoved", gamerId, newPos);
 	});
 
 	socket.on("ball", (newPos, newRotation) => {
-		socket.broadcast.emit("ballMoved", newPos, newRotation);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("ballMoved", newPos, newRotation);
 	});
 
 	socket.on("angle", (roomname, newAngle) => {
-		socket.broadcast.emit("angleChanged", newAngle);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("angleChanged", newAngle);
 	});
 
 	socket.on("gameStart", () => {
-		socket.broadcast.emit("gameStart");
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("gameStart");
 	});
 
 	socket.on("randomAngle", () => {
@@ -304,32 +304,32 @@ io.on("connection", (socket) => {
 		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 6);
 		let index = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
 		socket.emit("randomAngle", angle, index);
-		socket.broadcast.emit("randomAngle", angle, index);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("randomAngle", angle, index);
 	});
 
 	socket.on("currentMove", (value) => {
-		socket.broadcast.emit("currentMoveChange", value);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("currentMoveChange", value);
 	});
 
 	socket.on("speed", (speed) => {
-		socket.broadcast.emit("speedChange", speed);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("speedChange", speed);
 	});
 
 	socket.on("isFirstMove", (value) => {
-		socket.broadcast.emit("isFirstMoveChange", value);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("isFirstMoveChange", value);
 	});
 
 	socket.on("allowOpponentsPlankMovement", (value) => {
-		socket.broadcast.emit("allowPlankMovement", value);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("allowPlankMovement", value);
 	});
 
 	socket.on("editPlankWidth", (value) => {
-		socket.broadcast.emit("plankWidth", value);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("plankWidth", value);
 	});
 
 	socket.on("moveCounter", (value) => {
 		// console.log("moveCounter", value);
-		socket.broadcast.emit("moveCounter", value);
+		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("moveCounter", value);
 	});
 });
 
