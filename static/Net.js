@@ -36,7 +36,7 @@ export const init = () => {
 		console.log(epicnessSwitch);
 		window.ui.destroyInGameUI();
 		window.game.gameMode = epicnessSwitch ? "epic" : "very unpeic (not epic gaem )";
-		window.game.initGame();
+		window.game.initGame(epicnessSwitch);
 	});
 
 	ඞ.on("paletkaMoved", (id, newPos) => {

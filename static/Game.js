@@ -94,12 +94,12 @@ export default class Game {
 		// this.initGame();
 	};
 
-	initGame = () => {
+	initGame = (epic) => {
 		this.blueScore = 0;
 		this.redScore = 0;
 		window.ui.updateScores(this.blueScore, this.redScore);
 		this.addBall();
-		this.addPlanks();
+		this.addPlanks(epic);
 		this.startGame();
 		this.started = true;
 	};
@@ -291,9 +291,8 @@ export default class Game {
 		});
 	};
 
-	addPlanks = () => {
-		this.defaultPaletkaWidth =
-			this.gameMode === "epic" ? this.paletkiSize[0] : this.paletkiSize[this.maxMoves];
+	addPlanks = (epic) => {
+		this.defaultPaletkaWidth = epic ? this.paletkiSize[0] : this.paletkiSize[this.maxMoves];
 
 		this.plank1 = new Plank(this.defaultPaletkaWidth, this.FIELD_SIZE.z);
 		this.plank1.name = "plank1";
