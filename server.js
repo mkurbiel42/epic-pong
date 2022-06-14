@@ -111,7 +111,9 @@ io.on("connection", (socket) => {
 	socket.on("joinLobby", () => {
 		let rooms = Array.from(socket.rooms).filter((room) => room != socket.id);
 		for (const room of rooms) {
-			socket.leave(room);
+			dataCache.remove({ dataType: room, roomName: room }, (err, n) => {
+				socket.leave(room);
+			});
 		}
 
 		getUsersList((data) => {
@@ -122,7 +124,7 @@ io.on("connection", (socket) => {
 		}, "_lobby");
 	});
 	socket.on("point", (forPlayer) => {
-		console.log(forPlayer);
+		// console.log(forPlayer);
 		socket.emit("pointScored", forPlayer);
 		socket.broadcast.emit("pointScored", forPlayer);
 	});
@@ -299,7 +301,7 @@ io.on("connection", (socket) => {
 		let angle = 0;
 		do {
 			angle = Math.random() * 2 * Math.PI - Math.PI;
-		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 9);
+		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 6);
 		let index = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
 		socket.emit("randomAngle", angle, index);
 		socket.broadcast.emit("randomAngle", angle, index);

@@ -114,6 +114,7 @@ export default class Game {
 	};
 
 	startGame = () => {
+		this.allowPlankMovement = false;
 		this.moveCounter = 0;
 		this.startingPlayer = 0;
 		let animationTime = 1000;
@@ -140,6 +141,9 @@ export default class Game {
 				this.isFirstMove = true;
 				syncIsFirstMove();
 			}
+			setTimeout(() => {
+				this.allowPlankMovement = true;
+			}, 1000);
 		}, animationTime + delayTime);
 	};
 
@@ -214,7 +218,8 @@ export default class Game {
 		// }
 
 		if (this.gameMode !== "epic") {
-			this.speed *= 1.06;
+			this.speed *= 1.05;
+			syncSpeed(this.speed);
 		}
 
 		if (this.currentlyMovingPlank && this.gameStarted && this.gameMode === "epic" && !dont) {
@@ -301,26 +306,30 @@ export default class Game {
 		this.currentlyMovingPlank = this.gamerId == 1 ? this.plank1 : this.plank2;
 
 		window.addEventListener("keydown", (e) => {
-			switch (e.key) {
-				case "a":
-					this.currentlyMovingPlank.movingRight = false;
-					this.currentlyMovingPlank.movingLeft = true;
-					break;
-				case "d":
-					this.currentlyMovingPlank.movingLeft = false;
-					this.currentlyMovingPlank.movingRight = true;
-					break;
+			if (this.allowPlankMovement) {
+				switch (e.key) {
+					case "a":
+						this.currentlyMovingPlank.movingRight = false;
+						this.currentlyMovingPlank.movingLeft = true;
+						break;
+					case "d":
+						this.currentlyMovingPlank.movingLeft = false;
+						this.currentlyMovingPlank.movingRight = true;
+						break;
+				}
 			}
 		});
 
 		window.addEventListener("keyup", (e) => {
-			switch (e.key) {
-				case "a":
-					this.currentlyMovingPlank.movingLeft = false;
-					break;
-				case "d":
-					this.currentlyMovingPlank.movingRight = false;
-					break;
+			if (this.allowPlankMovement) {
+				switch (e.key) {
+					case "a":
+						this.currentlyMovingPlank.movingLeft = false;
+						break;
+					case "d":
+						this.currentlyMovingPlank.movingRight = false;
+						break;
+				}
 			}
 		});
 	};
@@ -424,7 +433,6 @@ export default class Game {
 									(this.currentlyMovingPlank.width + this.ballObject.size * 2)
 							);
 					syncAngle(this.angle);
-					syncSpeed(this.speed);
 					this.updateCurrentMove(this.currentMove * -1);
 				}
 			} else {
@@ -463,7 +471,7 @@ export default class Game {
 	movePlankAccordingly = () => {
 		if (!this.currentlyMovingPlank) return;
 		if (
-			!this.allowPlankMovement ||
+			!this.plankSpeed ||
 			this.gameStopped ||
 			(this.currentMove != this.gamerId && this.gameMode == "epic")
 		)
@@ -481,6 +489,7 @@ export default class Game {
 			this.currentlyMovingPlank.movingRight
 		) {
 			this.currentlyMovingPlank.position.x += this.plankSpeed * 1.25 * multiplier;
+			// console.log(this.plankSpeed, multiplier);
 			paletkaMove(this.currentlyMovingPlank.position);
 			// this.camera.position.x += this.plankSpeed * multiplier;
 			// this.camera.updateProjectionMatrix();
