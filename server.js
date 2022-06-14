@@ -42,7 +42,7 @@ const io = new Server(httpServer, {
 	cors: {
 		//origin: "http://127.0.0.1:2137",
 		methods: ["GET", "POST"]
-		// allowedHeaders: ["cock"],
+	
 		//credentials: true
 	}
 });
