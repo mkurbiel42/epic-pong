@@ -301,8 +301,9 @@ io.on("connection", (socket) => {
 		let angle = 0;
 		do {
 			angle = Math.random() * 2 * Math.PI - Math.PI;
-		} while (Math.abs(Math.PI / 2 - Math.abs(this.angle)) < Math.PI / 6);
+		} while (Math.abs(Math.PI / 2 - angle) < Math.PI / 8);
 		let index = Math.abs(angle) > Math.PI / 2 ? -1 : 1;
+		console.log(angle)
 		socket.emit("randomAngle", angle, index);
 		socket.broadcast.to(Array.from(socket.rooms)[1]).emit("randomAngle", angle, index);
 	});
