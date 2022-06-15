@@ -111,7 +111,7 @@ io.on("connection", (socket) => {
 	socket.on("joinLobby", () => {
 		let rooms = Array.from(socket.rooms).filter((room) => room != socket.id);
 		for (const room of rooms) {
-			dataCache.remove({ dataType: room, roomName: room }, (err, n) => {
+			dataCache.remove({ dataType: "room", roomName: room }, (err, n) => {
 				socket.leave(room);
 			});
 		}
